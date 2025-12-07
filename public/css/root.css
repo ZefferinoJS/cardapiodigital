@@ -1,0 +1,44 @@
+/*----Cores Principais*/
+:root {
+--verde-pastel-claro: #D6F1D7;                  /*(fundo listrado)*/
+
+--verde-menta-suave: #A9E4A2;                   /*(destaques, botões)*/
+
+--verde-medio: #7CCF6A;                        /*(seleção de categoria “Salads”)*/
+--verde-escuro-suave: #4CA35A;                  /*(ícones e textos verdes)*/
+
+ /*------------Cores de Texto------------*/
+
+--preto-suave: #1A1A1A;                        /*(títulos e texto forte)*/
+
+--cinza-escuro: #555555;                        /*(texto secundário)*/
+
+--cinza-medio: #AFAFAF;                        /*(placeholders, botões inativos)*/
+--cinza-bem-claro: #EDEDED;                    /*(linhas, elementos neutros)*/
+/*------------Cores de Fundo------------*/
+--branco-puro: #FFFFFF;                        /*(cards e container principal)*/
+--cinza-muito-claro: #F7F7F7;                  /*(background por trás do conteúdo)*/
+
+/*------------Cores de Destaque------------*/
+--amarelo-suave: #F4C542;                      /*(ícones de avaliação)*/
+--vermelho-pastel: #E86E6E;                    /*(destaques pequenos)*/
+
+
+
+
+/*---------------Títulos---------------*/
+
+--titulo-font-family: 'Poppins', sans-serif;
+--titulo-weight: 700;
+    
+--subtitulo-weight: 500;
+/*---------------Texto---------------*/
+--texto-font-family: 'Inter', sans-serif;
+--texto-normal: 400;
+/*---------------Botões---------------*/
+
+--font-weight-botoes: 600;
+
+
+}
+

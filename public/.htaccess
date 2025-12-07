@@ -1,0 +1,18 @@
+AcceptPathInfo On
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # If request points to an existing file or directory, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Rewrite clean API URLs to API front controller (preserve PATH_INFO)
+  RewriteRule ^api/(.*)$ api/index.php/$1 [L,QSA]
+
+  # (Optional) Uncomment to route all non-file requests to front controller
+  # RewriteRule ^ index.php [L]
+</IfModule>
+
+# If mod_rewrite is not available, requests to /api/index.php/... still work
