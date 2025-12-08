@@ -1,6 +1,6 @@
 // Front-end app: handle QR/table flow and load menu dynamically
 (async function(){
-  const API_BASE = '/api';
+  const API_BASE = '/assets/api';
   const restaurantSlug = document.body.dataset.restaurant || null;
 
   function qs(sel){ return document.querySelector(sel); }
@@ -157,7 +157,7 @@
               </div>
               <div class="prato-card-fndo-circulo"></div>
               <div class="prato-card-img">  
-                <img src="${escapeHtml(item.image || 'images/crispy-baked-meat-potatoes.webp')}" alt="${escapeHtml(item.name)}">
+                <img src="${escapeHtml(item.image || '/assets/images/crispy-baked-meat-potatoes.webp')}" alt="${escapeHtml(item.name)}">
               </div>
             </div>`;
         });

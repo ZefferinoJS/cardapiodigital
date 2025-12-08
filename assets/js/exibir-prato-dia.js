@@ -55,7 +55,7 @@
 
         // Atualizar imagem
         if (pratoImg && prato.image_url) {
-            pratoImg.src = resolveImageUrl(prato.image_url) || '/images/crispy-baked-meat-potatoes.webp';
+            pratoImg.src = resolveImageUrl(prato.image_url) || '/assets/images/crispy-baked-meat-potatoes.webp';
             pratoImg.alt = prato.name || 'Prato do Dia';
         }
 
@@ -117,7 +117,7 @@
                     title: prato.name,
                     price: priceDisplay,
                     priceValue: prato.price,
-                    img: resolveImageUrl(prato.image_url) || '/images/crispy-baked-meat-potatoes.webp',
+                    img: resolveImageUrl(prato.image_url) || '/assets/images/crispy-baked-meat-potatoes.webp',
                     qty: 1
                 });
             }

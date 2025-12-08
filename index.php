@@ -1,6 +1,3 @@
-
-
-
 <?php
-header('Location: public/index.php');
-exit;
+require __DIR__ . '/templates/menu.php';
+?>

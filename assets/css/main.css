@@ -1971,7 +1971,7 @@ body.modal-aberto {
 
 .dashboard-header-ad {
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.22), rgba(255, 169, 77, 0.2)),
-    url('../images/Laranja.webp') center / cover no-repeat;
+    url('/assets/images/Laranja.webp') center / cover no-repeat;
   min-height: 220px;
 }
 

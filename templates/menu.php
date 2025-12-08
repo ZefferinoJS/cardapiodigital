@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="shortcut icon" href="/assets/images/logo/5noback.png" type="image/x-icon">
     <title>O cardapio</title>
 </head>
 
 <body data-restaurant="minha-lanchonete">
     <header>
         <div class="icon">
-            <img src="/images/logo/2noback.png" alt="" srcset="">
+            <img src="/assets/images/logo/2noback.png" alt="" srcset="">
         </div>
 
         <nav>
@@ -47,7 +47,7 @@
     <main>
         <section class="welcome" id="prato-dia-section">
             <div class="big-dish">
-                <img id="prato-dia-img" src="images/autumn-salad.webp" alt="Prato do Dia">
+                <img id="prato-dia-img" src="/assets/images/autumn-salad.webp" alt="Prato do Dia">
             </div>
             <div class="container">
                 <div>
@@ -102,11 +102,11 @@
         
     </footer>
 
-    <script src="js/exibir-prato-dia.js" defer></script>
-    <script src="js/modal.js" defer></script>
-    <script src="js/cart.js" defer></script>
-    <script src="js/carousel.js" defer></script>
-    <script src="js/app.js" defer></script>
+    <script src="/assets/js/exibir-prato-dia.js" defer></script>
+    <script src="/assets/js/modal.js" defer></script>
+    <script src="/assets/js/cart.js" defer></script>
+    <script src="/assets/js/carousel.js" defer></script>
+    <script src="/assets/js/app.js" defer></script>
 
 </body>
 

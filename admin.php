@@ -1,6 +1,6 @@
 <?php
 // Conexão com a base de dados
-include_once  '../../config/dbnojs.php';
+require_once __DIR__.'/config/dbnojs.php';
 
 session_start();
 
