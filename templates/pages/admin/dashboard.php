@@ -111,7 +111,7 @@
                             </table>
                         </div>
                         <div style="margin-top:14px;text-align:right;">
-                            <a href="pedidos.php" style="font-size:13px;color:var(--laranja-primario);font-weight:600;">
+                            <a href="admin.php?routa=pedidos" style="font-size:13px;color:var(--laranja-primario);font-weight:600;">
                                 Ver todos os pedidos <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>

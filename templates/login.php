@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/assets/css/login.css">
+    <link rel="stylesheet" href="/assets/css/loginv2.css">
     <link rel="shortcut icon" href="/assets/images/logo/5noback.png" type="image/x-icon">
     <title><?= $escape($pageTitle) . " · " .  $nomesistema; ?></title>
 </head>
@@ -16,7 +16,6 @@
             <div class="logo-circle">
                 <img src="/assets/images/logo/6noback.png" alt="" srcset="">
             </div>
-            <div class="brand-sub">Gestão de restaurante</div>
             <p>
                 Bem vindo ao seu espaço culinário. Faça a gestão das atividades que ocorrem no seu espaço com segurança e praticidade.
             </p>

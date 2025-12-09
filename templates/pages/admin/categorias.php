@@ -1,29 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-AO">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo $titulo . " - Admin"; ?></title>
-</head>
-
-<body data-restaurant="minha-lanchonete">
-    <div class="admin-body">
-        <div class="admin-container">
-            <!-- Sidebar -->
-            <?php include 'aside-admin.php'; ?>
-            <!-- Main Content -->
-            <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad">
-                    <?php include 'header-admin.php'; ?>
+
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
-                            <h1><?php echo $titulo ?></h1>
-                            <p class="dh-sub"><?php echo $subtitulo ?></p>
+                            <h1><?= $escape($pageTitle) ?></h1>
+                            <p class="dh-sub"><?= $escape($pageSubtitle) ?></p>
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-nova-categoria">
@@ -57,8 +39,7 @@
                         </tbody>
                     </table>
                 </section>
-            </main>
-        </div>
+         
 
         <!-- Modal para Criar/Editar Categoria -->
         <div class="modal-overlay" id="modal-categoria">
@@ -103,10 +84,4 @@
                 </form>
             </div>
         </div>
-    </div>
 
-    <script src="../js/admin-categorias.js" defer></script>
-    <script src="../js/adminMEnu.js" defer></script>
-</body>
-
-</html>

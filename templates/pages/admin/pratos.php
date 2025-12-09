@@ -1,12 +1,10 @@
 
-            <main class="admin-main">
-                <!-- Dashboard Top Banner -->
+
                 <header class="dashboard-header">
-                    <?php include 'header-admin.php'; ?>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
-                            <h1><?php echo $titulo ?></h1>
-                            <p class="dh-sub"><?php echo $subtitulo ?></p>
+                            <h1><?= $escape( $pageTitle) ?></h1>
+                            <p class="dh-sub"><?= $pageSubtitle ?></p>
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-novo-prato">
@@ -71,7 +69,7 @@
                 <div class="admin-pagination" id="pagination">
                     <!-- Carregado dinamicamente -->
                 </div>
-            </main>
+
 
         <!-- Modal para Selecionar Prato do Dia -->
         <div class="modal-overlay" id="modal-prato-dia">
@@ -167,4 +165,3 @@
                 </form>
             </div>
         </div>
-    </div>

@@ -11,6 +11,7 @@
                             <button class="btn-primary" id="btn-nova-cadeira">
                                 <i class="fas fa-plus"></i> Nova Mesa
                             </button>
+                            <button class="btn-primary btn-primary-outline" id="btn-ver-lista-cadeiras">
                                 <i class="fas fa-list"></i> Ver todas as mesas
                             </button>
                         </div>
