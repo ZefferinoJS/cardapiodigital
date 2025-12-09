@@ -1,9 +1,3 @@
-<?php
-// Página de gerenciamento de avaliações
-$titulo = "Gerenciar Avaliações";
-$subtitulo = "Gerencie as avaliações dos pratos do restaurante.";
-$pagina_atual = "avaliacoes";
-?>
 <!DOCTYPE html>
 <html lang="pt-AO">
 
@@ -11,9 +5,7 @@ $pagina_atual = "avaliacoes";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/admin.css">
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
     <title><?php echo $titulo . " - Admin"; ?></title>
 </head>
@@ -27,9 +19,7 @@ $pagina_atual = "avaliacoes";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad">
-                    <div class="icon">
-                        <img src="/images/logo/7noback.png" alt="" srcset="">
-                    </div>
+                    <?php include 'header-admin.php'; ?>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?php echo $titulo ?></h1>
@@ -116,6 +106,7 @@ $pagina_atual = "avaliacoes";
     </div>
 
     <script src="../js/admin-avaliacoes.js" defer></script>
+    <script src="../js/adminMEnu.js" defer></script>
 </body>
 
 </html>

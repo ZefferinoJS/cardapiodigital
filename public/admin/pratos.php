@@ -1,9 +1,4 @@
-<?php
-// Página de gerenciamento de pratos
-$titulo = "Gerenciar Pratos";
-$subtitulo = "Gerencie os pratos do restaurante, suas categorias e disponibilidade.";
-$pagina_atual = "pratos";
-?>
+
 <!DOCTYPE html>
 <html lang="pt-AO">
 
@@ -11,9 +6,7 @@ $pagina_atual = "pratos";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/admin.css">
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
     <title><?php echo $titulo . " - Admin"; ?></title>
 
@@ -28,53 +21,7 @@ $pagina_atual = "pratos";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header">
-                    <div class="icon">
-                        <img src="/images/logo/7noback.png" alt="" srcset="">
-                        <div class="hamburguer">
-                            <i class="fas fa-hamburguer"></i>
-                        </div>
-                    </div>
-                    <div class="dashboard-cards">
-                        <div class="card summary-card variant-1">
-                            <div class="left">
-                                <div class="card-title">Total Pratos</div>
-                                <div class="card-value" id="total-pratos">—</div>
-                            </div>
-                            <div class="card-icon-wrap">
-                                <i class="fas fa-utensils card-icon" aria-hidden="true"></i>
-                            </div>
-                        </div>
-
-                        <div class="card summary-card variant-2">
-                            <div class="left">
-                                <div class="card-title">Média Avaliação</div>
-                                <div class="card-value" id="media-avaliacao">—</div>
-                            </div>
-                            <div class="card-icon-wrap">
-                                <i class="fas fa-star card-icon" aria-hidden="true"></i>
-                            </div>
-                        </div>
-
-                        <div class="card summary-card variant-3">
-                            <div class="left">
-                                <div class="card-title">Pedidos Hoje</div>
-                                <div class="card-value" id="pedidos-hoje">—</div>
-                            </div>
-                            <div class="card-icon-wrap">
-                                <i class="fas fa-receipt card-icon" aria-hidden="true"></i>
-                            </div>
-                        </div>
-
-                        <div class="card summary-card variant-4">
-                            <div class="left">
-                                <div class="card-title">Receita</div>
-                                <div class="card-value" id="receita">—</div>
-                            </div>
-                            <div class="card-icon-wrap">
-                                <i class="fas fa-coins card-icon" aria-hidden="true"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <?php include 'header-admin.php'; ?>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?php echo $titulo ?></h1>
@@ -82,7 +29,7 @@ $pagina_atual = "pratos";
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-novo-prato">
-                                <i class="fas fa-plus"><span>Novo Prato</span></i>
+                                <i class="fas fa-plus"> Novo Prato</i>
                             </button>
                             <button class="btn-primary btn-primary-outline" id="btn-prato-do-dia">
                                 <i class="fas fa-plus"></i> Prato do Dia
@@ -246,6 +193,7 @@ $pagina_atual = "pratos";
     <script src="../js/prato-do-dia.js" defer></script>
     <script src="../js/admin-pratos.js" defer></script>
     <script src="../js/admin-dashboard.js" defer></script>
+    <script src="../js/adminMEnu.js" defer></script>
 </body>
 
 </html>

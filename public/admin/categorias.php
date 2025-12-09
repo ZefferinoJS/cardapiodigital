@@ -1,9 +1,3 @@
-<?php
-// Página de gerenciamento de categorias
-$titulo="Gerenciar Categorias";
-$subtitulo="Gerencie as categorias do restaurante, seus status e detalhes.";
-$pagina_atual="categorias";
-?>
 <!DOCTYPE html>
 <html lang="pt-AO">
 
@@ -11,11 +5,9 @@ $pagina_atual="categorias";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/admin.css">
-    <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <link rel="stylesheet" href="/css/main.css">
     <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo $titulo." - Admin"; ?></title>
+    <title><?php echo $titulo . " - Admin"; ?></title>
 </head>
 
 <body data-restaurant="minha-lanchonete">
@@ -27,13 +19,11 @@ $pagina_atual="categorias";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad">
-                    <div class="icon">
-                        <img src="/images/logo/7noback.png" alt="" srcset="">
-                    </div>
+                    <?php include 'header-admin.php'; ?>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?php echo $titulo ?></h1>
-                            <p class="dh-sub"><?php echo $subtitulo?></p>
+                            <p class="dh-sub"><?php echo $subtitulo ?></p>
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-nova-categoria">
@@ -41,7 +31,7 @@ $pagina_atual="categorias";
                             </button>
                         </div>
                     </div>
-                
+
                 </header>
 
                 <!-- Tabela de Categorias -->
@@ -116,6 +106,7 @@ $pagina_atual="categorias";
     </div>
 
     <script src="../js/admin-categorias.js" defer></script>
+    <script src="../js/adminMEnu.js" defer></script>
 </body>
 
 </html>
