@@ -33,7 +33,7 @@ CREATE TABLE `admin_users` (
   `name` varchar(191) NOT NULL,
   `email` varchar(191) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
-  `role` enum('manager','staff') DEFAULT 'staff',
+  `role` enum('superadmin','manager','staff','kitchen') DEFAULT 'staff',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -265,6 +265,29 @@ INSERT INTO `order_items` (`id`, `order_id`, `item_id`, `qty`, `unit_price`, `to
 (4, 2, 3, 1, 28.00, 28.00, NULL, '2026-01-12 19:38:48'),
 (5, 2, 1, 1, 25.00, 25.00, NULL, '2026-01-12 19:38:48'),
 (6, 3, 1, 1, 25.00, 25.00, NULL, '2026-05-23 22:54:16');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notifications`
+--
+
+CREATE TABLE `notifications` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `restaurant_id` int UNSIGNED NOT NULL,
+  `user_id` int UNSIGNED DEFAULT NULL COMMENT 'NULL = notificação visível para todos os utilizadores do restaurante',
+  `tipo` enum('pedido','avaliacao','sistema') NOT NULL DEFAULT 'sistema',
+  `titulo` varchar(191) NOT NULL,
+  `mensagem` varchar(500) NOT NULL,
+  `lida` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_notifications_restaurant` (`restaurant_id`),
+  KEY `idx_notifications_user` (`user_id`),
+  KEY `idx_notifications_lida` (`lida`),
+  CONSTRAINT `fk_notifications_restaurant` FOREIGN KEY (`restaurant_id`) REFERENCES `restaurants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `admin_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 

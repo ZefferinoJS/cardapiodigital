@@ -115,7 +115,7 @@
             if (!cart || cart.length === 0) { showMessage('Carrinho vazio'); return; }
             checkoutBtn.disabled = true; checkoutBtn.classList.add('cart-checkout-disabled');
             // POST to /checkout with cart data
-            fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart: cart, tableNumber: '1', restaurantSlug: 'minha-lanchonete' }) })
+            fetch('/public/api/index.php/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart: cart, tableNumber: '1', restaurantSlug: 'minha-lanchonete' }) })
                 .then(res => {
                     if (res.ok) return res.json();
                     return res.json().then(err => { throw new Error(err.error || 'Erro no servidor'); });

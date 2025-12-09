@@ -3,17 +3,16 @@
  * admin.js — Painel de Administração (ficheiro unificado)
  * Contém: Dashboard · Pratos · Categorias · Pedidos · Mesas · Avaliações · Menu lateral
  *
- * DIAGNÓSTICO DO ERRO 404:
+ * DIAGNÓSTICO DO ERRO 404 (histórico — já corrigido):
  * ─────────────────────────────────────────────────────────────────────────────
- * admin-pedidos.js usava  API_BASE = '/assets/api'   ← ERRADO (retornava HTML 404)
- * Todos os outros módulos usavam  API_BASE = '/api'  ← CORRETO
- *
- * A rota /admin/orders EXISTE em index.php (linha 626), mas o caminho
- * '/assets/api/admin/orders' não existe no servidor — o Apache/Nginx
- * devolvia a página de erro 404 em HTML, daí o:
+ * O ficheiro da API vive em /public/api/index.php (ver o cabeçalho desse
+ * ficheiro). Versões anteriores deste script apontavam para '/assets/api'
+ * ou '/api', nenhum dos quais existe no servidor — o Apache devolvia uma
+ * página HTML de erro 404, daí o erro:
  *   SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
  *
- * SOLUÇÃO: unificar API_BASE = '/api' em todo o código admin.
+ * SOLUÇÃO: API_BASE aponta agora para '/public/api', com fallback explícito
+ * para '/public/api/index.php/<rota>' (funciona sempre, mesmo sem .htaccess).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -26,14 +25,14 @@
   ═══════════════════════════════════════════════════════════════ */
  
   /**
-   * loja/assets/api/index.php é o único ficheiro PHP da API.
-   * Sem .htaccess o servidor não sabe que /assets/api/admin/orders
+   * public/api/index.php é o único ficheiro PHP da API.
+   * Sem .htaccess o servidor não sabe que /public/api/admin/orders
    * deve ser tratado por index.php — devolve 404 HTML.
    * Por isso tentamos primeiro o URL limpo e, se vier 404,
-   * chamamos explicitamente /assets/api/index.php/<rota>.
+   * chamamos explicitamente /public/api/index.php/<rota>.
    */
-  const API_BASE     = '/assets/api';           // requer .htaccess / PATH_INFO
-  const API_FALLBACK = '/assets/api/index.php'; // funciona sempre
+  const API_BASE     = '/public/api';           // requer .htaccess / PATH_INFO
+  const API_FALLBACK = '/public/api/index.php'; // funciona sempre
   const RESTAURANT_ID = 1;
  
   /* ═══════════════════════════════════════════════════════════════
@@ -72,12 +71,12 @@
   /**
    * Fetch com fallback automático para /index.php/<rota>.
    *
-   * Sem .htaccess, /assets/api/admin/orders não existe como ficheiro/pasta
+   * Sem .htaccess, /public/api/admin/orders não existe como ficheiro/pasta
    * → o servidor devolve uma página HTML de 404
    * → JSON.parse falha com "Unexpected token '<'"
    *
    * Solução: se a primeira tentativa devolver 404, repetimos com
-   * /assets/api/index.php/<rota> que chama o PHP directamente.
+   * /public/api/index.php/<rota> que chama o PHP directamente.
    *
    * @param {string} path  — ex: "admin/orders?restaurant_id=1"
    * @param {RequestInit} opts
@@ -631,7 +630,7 @@
         const date   = filterData   ? filterData.value   : '';
         const search = searchInput  ? searchInput.value.trim() : '';
  
-        // ✅ URL corrigido: /api/admin/orders (era /assets/api/admin/orders)
+        // ✅ Usa apiFetch(), que já resolve para /public/api/admin/orders (com fallback)
         let url = `admin/orders?restaurant_id=${RESTAURANT_ID}`;
         if (status) url += `&status=${status}`;
         if (date)   url += `&date=${date}`;

@@ -1,6 +1,6 @@
 // Front-end app: handle QR/table flow and load menu dynamically
 (async function(){
-  const API_BASE = '/assets/api';
+  const API_BASE = '/public/api';
   const restaurantSlug = document.body.dataset.restaurant || null;
 
   function qs(sel){ return document.querySelector(sel); }

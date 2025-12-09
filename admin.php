@@ -515,7 +515,9 @@ if ($routa === 'usuarios') {
         $email    = trim($_POST['email']    ?? '');
         $role     = $_POST['role']          ?? 'staff';
         $password = $_POST['password']      ?? '';
-        if ($name && $email && $password && in_array($role, ['manager','staff'], true)) {
+        // 'superadmin' não é atribuível por esta UI — só pode ser definido diretamente na BD,
+        // para evitar que qualquer manager crie contas com privilégios máximos.
+        if ($name && $email && $password && in_array($role, ['manager', 'staff', 'kitchen'], true)) {
             try {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $pdo->prepare("
@@ -543,7 +545,7 @@ if ($routa === 'usuarios') {
         $email    = trim($_POST['email']       ?? '');
         $role     = $_POST['role']             ?? 'staff';
         $password = $_POST['password']         ?? '';
-        if ($uid && $name && $email && in_array($role, ['manager','staff'], true)) {
+        if ($uid && $name && $email && in_array($role, ['manager', 'staff', 'kitchen'], true)) {
             try {
                 if ($password !== '') {
                     $hash = password_hash($password, PASSWORD_BCRYPT);

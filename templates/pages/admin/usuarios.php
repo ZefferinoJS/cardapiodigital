@@ -26,6 +26,7 @@
                     <option value="">Todas</option>
                     <option value="manager"  <?= ($filtro_role === 'manager')  ? 'selected' : ''; ?>>Manager</option>
                     <option value="staff"    <?= ($filtro_role === 'staff')    ? 'selected' : ''; ?>>Staff</option>
+                    <option value="kitchen"  <?= ($filtro_role === 'kitchen')  ? 'selected' : ''; ?>>Cozinha</option>
                 </select>
             </div>
             <div class="field">
@@ -97,8 +98,8 @@
                 <tbody>
                     <?php foreach ($lista_usuarios as $u): ?>
                         <?php
-                            $role_label  = ['manager' => 'Manager', 'staff' => 'Staff'][$u['role']] ?? $u['role'];
-                            $role_color  = ['manager' => '#3B82F6', 'staff' => '#F59E0B'][$u['role']] ?? '#888';
+                            $role_label  = ['manager' => 'Manager', 'staff' => 'Staff', 'kitchen' => 'Cozinha'][$u['role']] ?? $u['role'];
+                            $role_color  = ['manager' => '#3B82F6', 'staff' => '#F59E0B', 'kitchen' => '#8B5CF6'][$u['role']] ?? '#888';
                             $is_proprio  = (int)$u['id'] === (int)$auth['id'];
                         ?>
                         <tr>
@@ -194,6 +195,7 @@
                     <select name="role" id="u-role" required>
                         <option value="staff">Staff</option>
                         <option value="manager">Manager</option>
+                        <option value="kitchen">Cozinha</option>
                     </select>
                 </div>
                 <div class="field" style="margin-bottom:16px;" id="campo-senha">

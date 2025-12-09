@@ -4,7 +4,7 @@
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?= $escape( $pageTitle) ?></h1>
-                            <p class="dh-sub"><?= $pageSubtitle ?></p>
+                            <p class="dh-sub"><?= $escape($pageSubtitle) ?></p>
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-novo-prato">
