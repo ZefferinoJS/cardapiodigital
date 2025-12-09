@@ -21,9 +21,10 @@
         <main class="admin-main">
  
             <!-- ── Header + Summary cards ── -->
-            <header class="dashboard-header">
+            <header class="dashboard-header top">
                 <?php include 'header-admin.php'; ?>
- 
+            </header>
+            <header class="dashboard-header bottom">
                 <div class="dashboard-cards">
                     <!-- Total Pratos -->
                     <div class="card summary-card variant-1">

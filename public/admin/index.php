@@ -20,6 +20,7 @@ if (($_POST['action'] ?? null) === 'logout') {
     session_unset();
     redirecionarPara('home');
 }
+/*
 if (($_POST['action'] ?? null) === 'login') {
     $email = trim((string) ($_POST['email'] ?? ''));
     $password = trim((string) ($_POST['password'] ?? ''));
@@ -97,7 +98,7 @@ if (!$auth) {
 
     include 'login.php';
     exit;
-}
+}*/
 
 $profile = (string) $auth['profile'];
 
