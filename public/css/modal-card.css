@@ -1,0 +1,215 @@
+/* Modal Card Custom Styles (inspired by provided image) */
+.modal-card-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(30, 32, 37, 0.18);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: row;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+  min-width: 540px;
+  max-width: 700px;
+  min-height: 280px;
+  font-family: 'Poppins', 'Inter', sans-serif;
+}
+
+.modal-image-section {
+  background: var(--preto-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  max-width: 240px;
+  padding: 0;
+  position: relative;
+  border-radius: 24px;
+}
+
+.modal-image-section img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 18px;
+  margin: 18px 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+.modal-content-section {
+  flex: 1;
+  padding: 24px 24px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: var(--branco-puro);
+}
+
+.modal-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-badges {
+  font-size: 0.7em;
+  color: var(--laranja-primario);
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.modal-title {
+  font-size: 2em;
+  font-weight: 700;
+  color: var(--preto-suave);
+}
+
+.modal-rating {
+  background: var(--preto-suave);
+  color: var(--branco-puro);
+  border-radius: 8px;
+  font-size: 0.95em;
+  padding: 2px 8px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.modal-desc {
+  background: var(--laranja-primario, #efefef);
+  color: var(--branco-puro);
+  font-size: 0.8em;
+  margin: 8px 0 10px 0;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 12px;
+}
+
+.modal-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.98em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.modal-price {
+  font-weight: 700;
+  color: #18181b;
+  font-size: 1.1em;
+}
+
+.modal-combo {
+  font-size: 0.92em;
+  color: #1d4ed8;
+  margin-left: 6px;
+}
+
+.modal-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.modal-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 1.1em;
+}
+
+.modal-qty button {
+  background: var(--preto-suave);
+  color: var(--branco-puro);
+  border: none;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-qty button:hover {
+  background: var(--laranja-primario);
+}
+
+.modal-order-btn {
+  background: var(--preto-suave);
+  color: var(--branco-puro);
+  border: 2px solid var(--preto-suave);
+  border-radius: 14px;
+  font-weight: 500;
+  font-size: .9em;
+  padding: 8px 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.15);
+  transition: background 0.2s;
+}
+
+.modal-order-btn:hover {
+  background: transparent;
+  color: var(--preto-suave);
+  border: 2px solid var(--preto-suave);
+}
+
+.modal-fav {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: var(--branco-puro);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  font-size: 1em;
+  color: var(--vermelho-pastel);
+  cursor: pointer;
+  border: none;
+}
+
+.modal-fav.active {
+  background: var(--vermelho-pastel);
+  color: var(--branco-puro);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #888;
+  cursor: pointer;
+  margin-left: auto;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--vermelho-pastel);
+}
+
+/* Visibility control */
+.modal-card-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}

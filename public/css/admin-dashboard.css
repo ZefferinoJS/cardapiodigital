@@ -1,0 +1,271 @@
+/* Estilos do dashboard administrativo - adaptado ao tema */
+:root {
+  --dash-bg: linear-gradient(90deg, #ff6b35, #ffa94d);
+  --dash-accent: #ff6b35;
+  --dash-card-bg: #fff;
+  --dash-text: #000;
+  --dash-card-1: linear-gradient(135deg, #ffe8d6, #fffbf7);
+  --dash-card-2: linear-gradient(135deg, #fff7e6, #fffef5);
+  --dash-card-3: linear-gradient(135deg, #ffe8d6, #fffbf7);
+  --dash-card-4: linear-gradient(135deg, #ffa94d, #fffbf7);
+  --accent-1: #d64545;
+  --accent-2: #ff6b35;
+  --accent-3: #ffa94d;
+  --accent-4: #aee950;
+}
+
+/* Dashboard header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: var(--dash-accent);
+  color: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 2px solid var(--dash-text);
+  position: relative;
+}
+.dashboard-header-ad{
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.219), rgba(255, 169, 77, 0.199)), url('../images/Laranja.webp') center/cover no-repeat;
+  min-height: 220px;
+}
+.dashboard-header-inner {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  padding: 10px 16px;
+  margin-top: 10px;
+}
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+.dh-sub {
+  opacity: 0.95;
+  margin: 6px 0 0;
+  font-size: 14px;
+  width: 200px;
+}
+.dh-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+.dh-actions .btn-primary {
+  background: var(--dash-text);
+  color: var(--dash-card-bg);
+  border: 2px solid var(--dash-text);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+.dh-actions .btn-primary:hover {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.dh-actions .btn-primary-outline {
+  background: transparent;
+  color: var(--dash-card-bg);
+  border: 2px solid var(--dash-text);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+.dh-actions .btn-primary-outline:hover {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+.dashboard-cards {
+  max-width: 600px;
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.summary-card {
+  background: var(--dash-card-bg);
+  color: var(--dash-text);
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  min-width: 160px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.summary-card .left {
+  display: flex;
+  flex-direction: column;
+}
+.card-title {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.card-value {
+  font-size: 20px;
+  font-weight: 800;
+}
+.card-icon {
+  font-size: 28px;
+  opacity: 0.9;
+  margin-left: 8px;
+}
+
+
+/* color variants */
+.summary-card.variant-1 {
+  background: var(--dash-card-1);
+}
+.summary-card.variant-2 {
+  background: var(--dash-card-2);
+}
+.summary-card.variant-3 {
+  background: var(--dash-card-3);
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  transition: transform 0.18s ease;
+}
+
+.card-small {
+  font-size: 13px;
+  color: #444;
+}
+.card-aux {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Icon wrapper and contrast tweaks */
+.card-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+.summary-card.variant-1 .card-icon-wrap {
+  background: linear-gradient(
+    180deg,
+    rgba(214, 69, 69, 0.12),
+    rgba(214, 69, 69, 0.06)
+  );
+}
+.summary-card.variant-2 .card-icon-wrap {
+  background: linear-gradient(
+    180deg,
+    rgba(214, 159, 47, 0.12),
+    rgba(214, 159, 47, 0.06)
+  );
+}
+.summary-card.variant-3 .card-icon-wrap {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 107, 53, 0.12),
+    rgba(255, 107, 53, 0.06)
+  );
+}
+.summary-card.variant-4 .card-icon-wrap {
+  background: rgba(255, 169, 77, 0.12);
+}
+.summary-card .card-icon {
+  color: var(--dash-accent);
+}
+.summary-card.variant-1 .card-icon {
+  color: var(--accent-1);
+}
+.summary-card.variant-2 .card-icon {
+  color: var(--accent-2);
+}
+.summary-card.variant-3 .card-icon {
+  color: var(--accent-3);
+}
+.summary-card.variant-4 .card-icon {
+  color: var(--accent-4);
+}
+
+/* Improve readability */
+.summary-card .card-title {
+  color: #4b5563;
+}
+.summary-card .card-value {
+  color: #111;
+  font-variant-numeric: tabular-nums;
+}
+
+/* small tweaks for compact layout */
+@media (max-width: 520px) {
+  .card-icon-wrap {
+    width: 44px;
+    height: 44px;
+  }
+  .card-icon {
+    font-size: 20px;
+  }
+  .card-value {
+    font-size: 18px;
+  }
+}
+
+/* Layout adjustments */
+.admin-body {
+  background: var(--laranja-primario);
+  padding: 20px;
+  width: 100%;
+  min-height: 70vh;
+  position: relative;
+  display: flex;
+  justify-content: center;
+
+}
+.admin-container {
+  position: absolute;
+  display: flex;
+  min-height: 100vh;
+  gap: 20px;
+  padding: 10px;
+  width: 100%;
+}
+
+.admin-main {
+  flex: 1;
+}
+
+/* Keep existing admin table readable within the new layout */
+.admin-table-section {
+  background: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+}
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .dashboard-cards {
+    flex-direction: column;
+  }
+  .admin-sidebar {
+    display: none;
+  }
+}

@@ -1,13 +1,12 @@
 <header>
     <div class="icon">
-        <i class="fas fa-home"></i>
-        <span>Meu cardápio</span>
+        <i class="fas fa-utensils"></i>
+        <span>O Cardápio</span>
     </div>
 
     <nav>
         <ul>
-            <li><a href="#">Início</a></li>
-            <li><a href="#">Contato</a></li>
+
             <li class="cart">
                 <button id="cart-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="cart-drawer" aria-label="Abrir carrinho">
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>

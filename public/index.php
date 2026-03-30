@@ -1,7 +1,3 @@
-<?php
-
-?>
-
 <!DOCTYPE html>
 <html lang="pt-AO">
 
@@ -10,113 +6,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pratos_populares.css">
+    <link rel="stylesheet" href="css/cards-menu.css">
     <title>O teu cardapio</title>
 </head>
 
 <body data-restaurant="minha-lanchonete">
     <?php include __DIR__ . '/../views/include/header.php'; ?>
     <main>
-        <section class="welcome">
+        <section class="welcome" id="prato-dia-section">
+            <div class="big-dish">
+                <img id="prato-dia-img" src="images/autumn-salad.webp" alt="Prato do Dia">
+            </div>
             <div class="container">
-                <h1>Bem-vindo ao Meu Cardápio</h1>
-                <p>Explore nossos deliciosos pratos e faça seu pedido online!</p>
-                <a href="#" class="btn-primary">Ver Produtos</a>
-            </div>
-        
-        </section>
-        <section class="filters">
-            <h2>Filtrar por Categoria</h2>
-            <div class="categorias-search">
-                <div class="categories">
-                    <button class="category-btn">Todos</button>
-                    <button class="category-btn">Saladas</button>
-                    <button class="category-btn">Hambúrgueres</button>
-                    <button class="category-btn">Bebidas</button>
+                <div class="destaque-titulo">
+                    <h4>Prato do Dia</h4>
                 </div>
-                <div class="search-bar">
-                    <input type="text" placeholder="Pesquisar pratos...">
-                    <button><i class="fas fa-search"></i></button>
+                <h1 id="prato-dia-nome">Salada saudável</h1>
+                <p id="prato-dia-desc">Salada é uma comida nutricionalmente completa que contém todas as 27 vitaminas essenciais e minerais, proteina, gorduras ácidas essenciais, carboidratos, fibras e fitonutrientes.</p>
+                <div class="preco-action">
+                    <a href="#" class="btn-primary" id="prato-dia-add"><i class="fas fa-circle-plus"></i><span>Adicionar</span></a>
+                    <span class="preco" id="prato-dia-preco">AO 1,500.00</span>
+                </div>
+
+            </div>
+            <div class="details-dayDish" id="prato-dia-details">
+                <div class="detail-item">
+                    <i class="fas fa-bolt"></i>
+                    <span>Rápido</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-leaf"></i>
+                    <span>Vegano</span>
+                </div>
+                <div class="detail-item">
+                    <i class="fa-solid fa-wheat-awn"></i>
+                    <span>Sem Glúten</span>
                 </div>
             </div>
+
         </section>
-        <section class="pratos populares">
+
+        <section class="top-five">
             <div class="header-pratos">
-                <h2>Nossos Pratos Populares</h2>
-                <div class="header-pratos-action">
-                    <div class="scroll-buttons">
-                        <button class="scroll-left" aria-label="Scroll Left"><i class="fas fa-chevron-left"></i></button>
-                        <button class="scroll-right" aria-label="Scroll Right"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                    <a href="#" class="btn-primary">Ver Todos</a>
+                <h2>Top 4 Mais Votados</h2> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="top-five-cards"><!-- preenchido dinamicamente via app.js --></div>
 
-                </div>
-            </div>
-            <div class="prato-carousel">
-                <div class="prato-lista" data-category="populares">
-                    <!-- Carregado dinamicamente da API -->
-                </div>
-            </div>
         </section>
-
-        <section class="pratos saladas" id="secao-saladas">
+        <section class="top-five categoria">
             <div class="header-pratos">
-                <h2>Saladas</h2>
-                <div class="header-pratos-action">
-                    <div class="scroll-buttons">
-                        <button class="scroll-left" aria-label="Scroll Left"><i class="fas fa-chevron-left"></i></button>
-                        <button class="scroll-right" aria-label="Scroll Right"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                    <a href="#" class="btn-primary">Ver Todos</a>
+                <h2>Categoria</h2> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="top-five-cards"><!-- preenchido dinamicamente via app.js --></div>
 
-                </div>
-            </div>
-            <div class="prato-carousel">
-                <div class="prato-lista" data-category="saladas">
-                    <!-- Carregado dinamicamente da API -->
-                </div>
-            </div>
         </section>
-        <section class="pratos hamburgueres" id="secao-hamburgueres">
-            <div class="header-pratos">
-                <h2>Hambúrgueres</h2>
-                <div class="header-pratos-action">
-                    <div class="scroll-buttons">
-                        <button class="scroll-left" aria-label="Scroll Left"><i class="fas fa-chevron-left"></i></button>
-                        <button class="scroll-right" aria-label="Scroll Right"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                    <a href="#" class="btn-primary">Ver Todos</a>
+  
 
-                </div>
-            </div>
-            <div class="prato-carousel">
-                <div class="prato-lista" data-category="hamburgueres">
-                    <!-- Carregado dinamicamente da API -->
-                </div>
-            </div>
-        </section>
-
-        <section class="pratos bebidas" id="secao-bebidas">
-            <div class="header-pratos">
-                <h2>Bebidas</h2>
-                <div class="header-pratos-action">
-                    <div class="scroll-buttons">
-                        <button class="scroll-left" aria-label="Scroll Left"><i class="fas fa-chevron-left"></i></button>
-                        <button class="scroll-right" aria-label="Scroll Right"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                    <a href="#" class="btn-primary">Ver Todos</a>
-
-                </div>
-            </div>
-            <div class="prato-carousel">
-                <div class="prato-lista" data-category="bebidas">
-                    <!-- Carregado dinamicamente da API -->
-                </div>
-            </div>
-        </section>
     </main>
 
     <?php include __DIR__ . '/../views/include/footer.php'; ?>
 
+    <script src="js/exibir-prato-dia.js" defer></script>
     <script src="js/modal.js" defer></script>
     <script src="js/cart.js" defer></script>
     <script src="js/carousel.js" defer></script>

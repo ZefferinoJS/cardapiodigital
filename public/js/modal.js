@@ -1,24 +1,60 @@
-// Modal behavior for prato cards
-(function(){
-  function createModal(){
+/**
+ * Modal de Detalhes do Prato
+ * Gerencia a exibição de informações detalhadas dos pratos em um modal
+ * Inclui: imagem, descrição, ingredientes, avaliações e adição ao carrinho
+ */
+(function() {
+  'use strict';
+
+  // ==================== CONSTANTES ====================
+  const CART_STORAGE_KEY = 'cart';
+  const FOCUS_DELAY_MS = 50;
+  const FEEDBACK_DELAY_MS = 700;
+  const DEFAULT_QUANTITY = 1;
+
+  const SELECTORS = {
+    CARD: '.prato-card, .categoria-card',
+    EYE_ICON: 'i.fa-eye',
+    ADD_CART: '.add-cart',
+    BTN_SECONDARY: '.btn-secondary'
+  };
+
+  // ==================== CRIAÇÃO DO MODAL ====================
+  
+  /**
+   * Cria a estrutura HTML do modal e adiciona ao DOM
+   * @returns {HTMLElement} Elemento overlay do modal
+   */
+  function criarModal() {
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
+    overlay.className = 'modal-card-overlay';
     overlay.innerHTML = `
-      <div class="modal" role="dialog" aria-modal="true">
-        <div class="modal-header">
-          <strong class="modal-title"></strong>
-          <button class="modal-close" aria-label="Fechar">&times;</button>
-        </div>
-        <div class="modal-body">
+      <div class="modal-card" role="dialog" aria-modal="true">
+        <div class="modal-image-section">
           <img class="modal-image" src="" alt="imagem do prato">
-          <div class="modal-content">
-            <h3></h3>
-            <p class="modal-desc"></p>
-            <div class="modal-meta"></div>
-          </div>
+          <button class="modal-fav" title="Favoritar" aria-label="Favoritar"><i class="fa-regular fa-heart"></i></button>
         </div>
-        <div class="modal-footer">
-          <button class="btn-modal-primary">Adicionar ao carrinho</button>
+        <div class="modal-content-section">
+          <div class="modal-header-row">
+            <span class="modal-badges"></span>
+            <button class="modal-close" aria-label="Fechar">&times;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="modal-title"></span>
+          </div>
+          
+          <div class="modal-ratings"></div>
+          <div class="modal-ingredients"><h4>Ingredientes</h4><ul></ul></div>
+          <div class="modal-desc"></div>
+          <div class="modal-footer-row">
+            <div class="modal-qty">
+              <button class="modal-qty-minus" aria-label="Diminuir quantidade">-</button>
+              <span class="modal-qty-value">1</span>
+              <button class="modal-qty-plus" aria-label="Aumentar quantidade">+</button>
+              <span class="modal-price">$00.0</span>
+            </div>
+            <button class="modal-order-btn">Pedir <i class="fa-solid fa-bell-concierge"></i></button>
+          </div>
         </div>
       </div>
     `;
@@ -26,222 +62,501 @@
     return overlay;
   }
 
-  const modalOverlay = createModal();
-  const modal = modalOverlay.querySelector('.modal');
-  const modalTitle = modalOverlay.querySelector('.modal-title');
-  const modalImg = modalOverlay.querySelector('.modal-image');
-  const modalH3 = modalOverlay.querySelector('.modal-content h3');
-  const modalDesc = modalOverlay.querySelector('.modal-desc');
-  const modalMeta = modalOverlay.querySelector('.modal-meta');
-  const btnClose = modalOverlay.querySelector('.modal-close');
+  // ==================== INICIALIZAÇÃO ====================
+  
+  const modalOverlay = criarModal();
+  const modal = modalOverlay.querySelector('.modal-card');
+  
+  // Cache dos elementos do modal
+  const elementos = {
+    titulo: modalOverlay.querySelector('.modal-title'),
+    imagem: modalOverlay.querySelector('.modal-image'),
+    descricao: modalOverlay.querySelector('.modal-desc'),
+    categoria: modalOverlay.querySelector('.modal-badges'),
+    preco: modalOverlay.querySelector('.modal-price'),
+    combo: modalOverlay.querySelector('.modal-combo'),
+    quantidade: modalOverlay.querySelector('.modal-qty-value'),
+    botaoDiminuirQtd: modalOverlay.querySelector('.modal-qty-minus'),
+    botaoAumentarQtd: modalOverlay.querySelector('.modal-qty-plus'),
+    botaoPedido: modalOverlay.querySelector('.modal-order-btn'),
+    botaoFavorito: modalOverlay.querySelector('.modal-fav')
+  };
 
-  let _previousActive = null;
-  function getFocusable(container){
-    return Array.from(container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'))
+  let precoBaseAtual = 0;
+  let precoOriginalAtual = '';
+
+  let elementoAnteriorFoco = null;
+
+  // ==================== FUNÇÕES UTILITÁRIAS ====================
+
+  /**
+   * Obtém todos os elementos focáveis dentro de um container
+   * @param {HTMLElement} container - Container para buscar elementos focáveis
+   * @returns {Array<HTMLElement>} Lista de elementos focáveis
+   */
+  function obterElementosFocaveis(container) {
+    const seletor = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    return Array.from(container.querySelectorAll(seletor))
       .filter(el => !el.hasAttribute('disabled'));
   }
 
-  function openModalFromCard(card){
-    // Prefer data attributes if available
+  /**
+   * Extrai dados do card para popular o modal
+   * @param {HTMLElement} card - Elemento card do prato
+   * @returns {Object} Objeto com dados do prato
+   */
+  function extrairDadosCard(card) {
     const dataset = card.dataset || {};
-    const title = dataset.title || card.querySelector('h3')?.textContent?.trim() || dataset.id || '';
-    const img = dataset.img || card.querySelector('img')?.getAttribute('src') || '';
-    const timeSpan = card.querySelector('.time-rank span:nth-child(1)');
-    const ratingSpan = card.querySelector('.time-rank span:nth-child(2)');
-    const price = dataset.price || card.querySelector('.preco')?.textContent?.trim() || '';
-    const desc = dataset.desc || card.querySelector('p')?.textContent?.trim() || 'Descrição do prato disponível aqui.';
+    
+    return {
+      id: dataset.id || '',
+      titulo: card.querySelector('h3')?.textContent?.trim() || dataset.id || '',
+      imagem: dataset.img || card.querySelector('img')?.getAttribute('src') || '',
+      preco: dataset.price || card.querySelector('.preco')?.textContent?.trim() || '0.0',
+      descricao: dataset.desc || card.querySelector('p')?.textContent?.trim() || 'Descrição do prato disponível aqui.',
+      ingredientes: dataset.ingredients || '',
+      avaliacoes: dataset.rating || null,
+      categoria: dataset.category || dataset.categoria || card.querySelector('.categoria')?.textContent?.trim() || 'Categoria'
+    };
+  }
 
-    modalTitle.textContent = title;
-    modalH3.textContent = title;
-    modalImg.src = img;
-    modalImg.alt = title;
-    modalDesc.textContent = desc;
-    modalMeta.innerHTML = '';
-    if(timeSpan) modalMeta.innerHTML += `<div style="margin-bottom:6px">${timeSpan.innerHTML}</div>`;
-    if(ratingSpan) modalMeta.innerHTML += `<div style="margin-bottom:6px">${ratingSpan.innerHTML}</div>`;
-    if(price) modalMeta.innerHTML += `<div><strong>Preço:</strong> ${price}</div>`;
-
-    // Ingredients: try dataset.ingredients (comma-separated) or fallback to data-desc parsing
-    const ingredientsRaw = dataset.ingredients || '';
-    let ingredients = [];
-    if(ingredientsRaw){
-      ingredients = String(ingredientsRaw).split(',').map(s => s.trim()).filter(Boolean);
+  /**
+   * Formata valor monetário no padrão brasileiro
+   * @param {number} valor - Valor numérico
+   * @param {string} fallback - Texto a exibir caso valor não seja numérico
+   * @returns {string} Valor formatado
+   */
+  function formatarPreco(valor, fallback) {
+    if(Number.isFinite(valor)) {
+      return `Kz ${valor.toFixed(2).replace('.', ',')}`;
     }
-    // render ingredients list inside modal (create container if needed)
-    let ingContainer = modalOverlay.querySelector('.modal-ingredients');
-    if(!ingContainer){
+    return fallback;
+  }
+
+  /**
+   * Atualiza quantidade e preço exibidos no modal
+   * @param {number} precoBase - Preço unitário numérico
+   * @param {number} quantidade - Quantidade atual
+   * @param {string} precoOriginal - Texto original do preço (fallback)
+   */
+  function atualizarQuantidadeEPreco(precoBase, quantidade, precoOriginal) {
+    if(elementos.quantidade) {
+      elementos.quantidade.textContent = String(quantidade);
+    }
+    if(elementos.preco) {
+      const total = Number.isFinite(precoBase) ? precoBase * quantidade : NaN;
+      elementos.preco.textContent = formatarPreco(total, precoOriginal);
+    }
+  }
+
+  /**
+   * Altera quantidade em delta, respeitando mínimo 1
+   * @param {number} delta - Incremento/decremento
+   */
+  function alterarQuantidade(delta) {
+    const atual = parseInt(elementos.quantidade?.textContent || DEFAULT_QUANTITY, 10) || DEFAULT_QUANTITY;
+    const novaQuantidade = Math.max(1, atual + delta);
+    atualizarQuantidadeEPreco(precoBaseAtual, novaQuantidade, precoOriginalAtual);
+  }
+
+  /**
+   * Abre o modal com dados do card selecionado
+   * @param {HTMLElement} card - Card do prato clicado
+   */
+  function abrirModal(card) {
+    const dados = extrairDadosCard(card);
+
+    // Popula elementos básicos
+    if(elementos.titulo) elementos.titulo.textContent = dados.titulo;
+    if(elementos.imagem) { 
+      elementos.imagem.src = dados.imagem; 
+      elementos.imagem.alt = dados.titulo; 
+    }
+
+    const dadosAvaliacao = processarDadosAvaliacao(dados.avaliacoes, card);
+    renderizarAvaliacoes(dadosAvaliacao);
+
+    if(elementos.categoria) elementos.categoria.textContent = dados.categoria;
+    if(elementos.combo) elementos.combo.textContent = dados.combo;
+
+    // Renderiza seções dinâmicas
+    renderizarIngredientes(dados.ingredientes);
+    renderizarDescricao(dados.descricao);
+
+    // Preço e quantidade
+    precoBaseAtual = converterPreco(dados.preco);
+    precoOriginalAtual = dados.preco;
+    atualizarQuantidadeEPreco(precoBaseAtual, DEFAULT_QUANTITY, precoOriginalAtual);
+
+    // Configura dados para adicionar ao carrinho
+    if(elementos.botaoPedido) {
+      elementos.botaoPedido.dataset.pratoId = dados.id;
+      elementos.botaoPedido.dataset.pratoTitle = dados.titulo;
+      elementos.botaoPedido.dataset.pratoPrice = dados.preco;
+      elementos.botaoPedido.dataset.pratoImg = dados.imagem;
+    }
+
+    // Gerencia foco para acessibilidade
+    elementoAnteriorFoco = document.activeElement;
+    modalOverlay.classList.add('show');
+    document.body.classList.add('modal-aberto');
+    document.addEventListener('keydown', tratarTecla);
+
+    // Move foco para primeiro elemento focável
+    setTimeout(() => {
+      const focaveis = obterElementosFocaveis(modal);
+      if(focaveis.length) focaveis[0].focus();
+    }, FOCUS_DELAY_MS);
+  }
+
+  /**
+   * Renderiza a descrição do prato no modal
+   * @param {string} descricaoTexto - Texto da descrição
+   */
+  function renderizarDescricao(descricaoTexto) {
+    let container = modalOverlay.querySelector('.modal-desc');
+    
+    // Cria container se não existir
+    if(!container) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'modal-desc';
+      
+      const contentSection = modal.querySelector('.modal-content-section');
+      const footerRow = contentSection?.querySelector('.modal-footer-row');
+      if(footerRow) {
+        contentSection.insertBefore(wrapper, footerRow);
+      } else {
+        contentSection.appendChild(wrapper);
+      }
+      
+      container = modalOverlay.querySelector('.modal-desc');
+    }
+
+    container.textContent = descricaoTexto;
+  }
+
+  // ==================== GERENCIAMENTO DE INGREDIENTES ====================
+
+  /**
+   * Renderiza a lista de ingredientes no modal
+   * @param {string} ingredientesRaw - String com ingredientes separados por vírgula
+   */
+  function renderizarIngredientes(ingredientesRaw) {
+    const ingredientes = ingredientesRaw
+      ? String(ingredientesRaw).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    let container = modalOverlay.querySelector('.modal-ingredients');
+    
+    // Cria container se não existir
+    if(!container) {
       const wrapper = document.createElement('div');
       wrapper.className = 'modal-ingredients';
       wrapper.innerHTML = '<h4>Ingredientes</h4><ul></ul>';
-      modal.querySelector('.modal-content').appendChild(wrapper);
-      ingContainer = modalOverlay.querySelector('.modal-ingredients');
-    }
-    const ul = ingContainer.querySelector('ul');
-    ul.innerHTML = '';
-    if(ingredients.length === 0){
-      ul.innerHTML = '<li>Ingredientes não especificados.</li>';
-    } else {
-      ingredients.forEach(it => { const li = document.createElement('li'); li.textContent = it; ul.appendChild(li); });
-    }
-
-    // Ratings: parse dataset.rating JSON if present
-    let ratingData = null;
-    if(dataset.rating){
-      try{ ratingData = JSON.parse(dataset.rating); }catch(e){ ratingData = null; }
-    }
-    // fallback: try to read average from displayed star span
-    if(!ratingData){
-      const avgSpan = card ? card.querySelector('.time-rank span:nth-child(2)') : null;
-      const avgText = avgSpan ? avgSpan.textContent.replace(/[^0-9\.,]/g,'').trim() : '';
-      const avg = avgText ? parseFloat(avgText.replace(',', '.')) : null;
-      ratingData = avg ? { avg: avg, total: 0, counts: {} } : null;
-    }
-
-    // Render ratings block
-    let ratingsBlock = modalOverlay.querySelector('.modal-ratings');
-    if(!ratingsBlock){
-      const div = document.createElement('div'); div.className = 'modal-ratings';
-      div.innerHTML = `
-        <div class="rating-summary">
-          <div class="avg">-</div>
-          <div class="total">- avaliações</div>
-        </div>
-        <div class="rating-breakdown">
-        </div>
-      `;
-      modal.querySelector('.modal-content').appendChild(div);
-      ratingsBlock = modalOverlay.querySelector('.modal-ratings');
-    }
-
-    const summaryAvg = ratingsBlock.querySelector('.rating-summary .avg');
-    const summaryTotal = ratingsBlock.querySelector('.rating-summary .total');
-    const breakdownEl = ratingsBlock.querySelector('.rating-breakdown');
-    breakdownEl.innerHTML = '';
-
-    if(ratingData){
-      const total = ratingData.total || Object.values(ratingData.counts || {}).reduce((s,v)=>s+ (Number(v)||0),0);
-      summaryAvg.textContent = ratingData.avg ? Number(ratingData.avg).toFixed(1) : '-';
-      summaryTotal.textContent = total ? `${total} avaliações` : 'Sem avaliações';
-
-      // ensure counts exist for 5..1
-      const counts = ratingData.counts || {};
-      const sumCounts = Object.keys(counts).reduce((s,k)=>s + (Number(counts[k])||0),0) || total || 0;
-      for(let s=5;s>=1;s--){
-        const cnt = Number(counts[String(s)]) || 0;
-        const percent = sumCounts ? Math.round((cnt / sumCounts) * 100) : 0;
-        const row = document.createElement('div'); row.className = 'rating-row';
-        row.innerHTML = `
-          <div class="star-label">${s} <i class="fas fa-star" style="color:var(--amarelo-suave);"></i></div>
-          <div class="bar"><div class="fill" style="width:${percent}%;"></div></div>
-          <div class="percent">${percent}%</div>
-        `;
-        breakdownEl.appendChild(row);
-      }
-    } else {
-      summaryAvg.textContent = '-'; summaryTotal.textContent = 'Sem avaliações';
-      breakdownEl.innerHTML = '<p style="color:var(--cinza-escuro)">Sem dados de avaliações.</p>';
-    }
-
-    // set add-to-cart action data
-    const addBtn = modalOverlay.querySelector('.btn-modal-primary');
-    addBtn.dataset.pratoId = dataset.id || '';
-    addBtn.dataset.pratoTitle = title;
-    addBtn.dataset.pratoPrice = price;
-    addBtn.dataset.pratoImg = modalImg.src || '';
-
-    // accessibility: save previous focus and move focus into modal
-    _previousActive = document.activeElement;
-    modalOverlay.classList.add('show');
-    document.addEventListener('keydown', onKey);
-    // focus first actionable element (close button)
-    setTimeout(()=>{
-      const focusables = getFocusable(modal);
-      if(focusables.length) focusables[0].focus();
-    },50);
-  }
-
-  function closeModal(){
-    modalOverlay.classList.remove('show');
-    document.removeEventListener('keydown', onKey);
-    // restore focus
-    try{ if(_previousActive && typeof _previousActive.focus === 'function') _previousActive.focus(); }catch(e){}
-  }
-
-  function onKey(e){
-    if(e.key === 'Escape') return closeModal();
-    if(e.key === 'Tab'){
-      const focusables = getFocusable(modal);
-      if(focusables.length === 0) { e.preventDefault(); return; }
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if(e.shiftKey){
-        if(document.activeElement === first){ last.focus(); e.preventDefault(); }
+      
+      const contentSection = modal.querySelector('.modal-content-section');
+      const footerRow = contentSection?.querySelector('.modal-footer-row');
+      if(footerRow) {
+        contentSection.insertBefore(wrapper, footerRow);
       } else {
-        if(document.activeElement === last){ first.focus(); e.preventDefault(); }
+        contentSection.appendChild(wrapper);
+      }
+      
+      container = modalOverlay.querySelector('.modal-ingredients');
+    }
+
+    const lista = container.querySelector('ul');
+    lista.innerHTML = '';
+
+    if(ingredientes.length === 0) {
+      lista.innerHTML = '<li>Ingredientes não especificados.</li>';
+    } else {
+      ingredientes.forEach(ingrediente => {
+        const item = document.createElement('li');
+        item.textContent = ingrediente;
+        lista.appendChild(item);
+      });
+    }
+  }
+
+  // ==================== GERENCIAMENTO DE AVALIAÇÕES ====================
+
+  /**
+   * Processa dados de avaliação do card
+   * @param {string|null} avaliacoesRaw - JSON string ou null
+   * @param {HTMLElement} card - Card elemento para fallback
+   * @returns {Object|null} Dados processados de avaliação
+   */
+  function processarDadosAvaliacao(avaliacoesRaw, card) {
+    let dados = null;
+
+    // Tenta parsear JSON do dataset
+    if(avaliacoesRaw) {
+      try {
+        dados = JSON.parse(avaliacoesRaw);
+      } catch(e) {
+        dados = null;
+      }
+    }
+
+    // Fallback: extrai média das estrelas exibidas
+    if(!dados && card) {
+      const spanAvaliacao = card.querySelector('.time-rank span:nth-child(2)');
+      const textoMedia = spanAvaliacao?.textContent.replace(/[^0-9\.,]/g, '').trim() || '';
+      const media = textoMedia ? parseFloat(textoMedia.replace(',', '.')) : null;
+      dados = media ? { avg: media, total: 0, counts: {} } : null;
+    }
+
+    return dados;
+  }
+
+  /**
+   * Renderiza o bloco de avaliações no modal
+   * @param {Object|null} dadosAvaliacao - Dados de avaliação processados
+   */
+  function renderizarAvaliacoes(dadosAvaliacao) {
+    let blocoAvaliacoes = modalOverlay.querySelector('.modal-ratings');
+
+    // Popula bloco existente no HTML
+    if(!blocoAvaliacoes) {
+      blocoAvaliacoes = document.createElement('div');
+      blocoAvaliacoes.className = 'modal-ratings';
+      const contentSection = modal.querySelector('.modal-content-section');
+      contentSection.appendChild(blocoAvaliacoes);
+    }
+
+    blocoAvaliacoes.innerHTML = `
+      <div class="rating-summary">
+        <div class="avg"><i class="fa fa-star"></i> -</div>
+        <div class="total">- avaliações</div>
+      </div>
+    `;
+
+    const elementoMedia = blocoAvaliacoes.querySelector('.rating-summary .avg');
+    const elementoTotal = blocoAvaliacoes.querySelector('.rating-summary .total');
+
+    if(dadosAvaliacao) {
+      const total = dadosAvaliacao.total || 
+        Object.values(dadosAvaliacao.counts || {})
+          .reduce((soma, valor) => soma + (Number(valor) || 0), 0);
+      
+      elementoMedia.textContent = dadosAvaliacao.avg 
+        ? Number(dadosAvaliacao.avg).toFixed(1) 
+        : '-';
+      
+      elementoTotal.textContent = total 
+        ? `${total} avaliações` 
+        : 'Sem avaliações';
+    } else {
+      elementoMedia.textContent = '-';
+      elementoTotal.textContent = 'Sem avaliações';
+    }
+  }
+
+  // ==================== GERENCIAMENTO DO MODAL ====================
+
+  /**
+   * Fecha o modal e restaura foco anterior
+   */
+  function fecharModal() {
+    modalOverlay.classList.remove('show');
+    document.body.classList.remove('modal-aberto');
+    document.removeEventListener('keydown', tratarTecla);
+    
+    if(elementoAnteriorFoco && typeof elementoAnteriorFoco.focus === 'function') {
+      try { 
+        elementoAnteriorFoco.focus(); 
+      } catch(e) { 
+        // Ignora erros de foco em elementos removidos
+      }
+      elementoAnteriorFoco = null;
+    }
+  }
+
+  /**
+   * Gerencia teclas de atalho no modal (ESC e TAB)
+   * @param {KeyboardEvent} evento - Evento de teclado
+   */
+  function tratarTecla(evento) {
+    if(evento.key === 'Escape') {
+      fecharModal();
+      return;
+    }
+
+    // Gerencia navegação por TAB (trap focus)
+    if(evento.key === 'Tab') {
+      const focaveis = obterElementosFocaveis(modal);
+      if(focaveis.length === 0) { 
+        evento.preventDefault(); 
+        return; 
+      }
+
+      const primeiro = focaveis[0];
+      const ultimo = focaveis[focaveis.length - 1];
+
+      if(evento.shiftKey) {
+        if(document.activeElement === primeiro) { 
+          ultimo.focus(); 
+          evento.preventDefault(); 
+        }
+      } else {
+        if(document.activeElement === ultimo) { 
+          primeiro.focus(); 
+          evento.preventDefault(); 
+        }
       }
     }
   }
 
-  modalOverlay.addEventListener('click', function(e){
-    if(e.target === modalOverlay || e.target.classList.contains('modal-close')) closeModal();
-  });
+  // ==================== GERENCIAMENTO DO CARRINHO ====================
 
-  // Delegate click on eye icons
-  document.addEventListener('click', function(e){
-    const eye = e.target.closest('i.fa-eye');
-    if(!eye) return;
-    const card = eye.closest('.prato-card');
-    if(!card) return;
-    openModalFromCard(card);
-  });
-
-  // Add to cart button behavior — persist cart in localStorage
-  modalOverlay.querySelector('.btn-modal-primary').addEventListener('click', function(){
-    const id = this.dataset.pratoId || '(sem id)';
-    const title = this.dataset.pratoTitle || '(sem titulo)';
-    const price = this.dataset.pratoPrice || '(sem preco)';
-    const img = this.dataset.pratoImg || '';
-
-    function getCart(){
-      try{
-        const raw = localStorage.getItem('cart');
-        return raw ? JSON.parse(raw) : [];
-      }catch(e){ return []; }
+  /**
+   * Obtém carrinho do localStorage
+   * @returns {Array} Array de itens do carrinho
+   */
+  function obterCarrinho() {
+    try {
+      const carrinhoJSON = localStorage.getItem(CART_STORAGE_KEY);
+      return carrinhoJSON ? JSON.parse(carrinhoJSON) : [];
+    } catch(e) {
+      console.error('Erro ao ler carrinho:', e);
+      return [];
     }
-    function saveCart(cart){
-      try{ localStorage.setItem('cart', JSON.stringify(cart)); }catch(e){ console.error('Erro ao salvar carrinho', e); }
-    }
+  }
 
-    const cart = getCart();
-    const existing = cart.find(i => i.id === id);
-    if(existing){
-      existing.qty = (existing.qty || 1) + 1;
+  /**
+   * Salva carrinho no localStorage
+   * @param {Array} carrinho - Array de itens
+   */
+  function salvarCarrinho(carrinho) {
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(carrinho));
+    } catch(e) {
+      console.error('Erro ao salvar carrinho:', e);
+    }
+  }
+
+  /**
+   * Converte string de preço para número
+   * @param {string} precoStr - String com preço (ex: "Kz 25,90")
+   * @returns {number} Valor numérico
+   */
+  function converterPreco(precoStr) {
+    if(!precoStr) return 0;
+    
+    const limpo = String(precoStr)
+      .replace(/[A-Za-z\s]/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+    
+    const valor = parseFloat(limpo);
+    return Number.isFinite(valor) ? valor : 0;
+  }
+
+  /**
+   * Adiciona ou atualiza item no carrinho
+   * @param {Object} novoItem - Item a ser adicionado
+   */
+  function adicionarAoCarrinho(novoItem, quantidade = 1) {
+    const quantidadeFinal = Math.max(1, Number(quantidade) || 1);
+    const carrinho = obterCarrinho();
+    const existente = carrinho.find(item => item.id === novoItem.id);
+
+    if(existente) {
+      existente.qty = (existente.qty || 1) + quantidadeFinal;
+      existente.priceValue = converterPreco(novoItem.price) * existente.qty;
     } else {
-      // compute numeric price if possible
-      function parsePrice(str){
-        if(!str) return 0;
-        const cleaned = String(str).replace(/[A-Za-z\s]/g,'').replace(/\./g,'').replace(',','.');
-        const v = parseFloat(cleaned);
-        return Number.isFinite(v) ? v : 0;
-      }
-      const priceValue = parsePrice(price);
-      cart.push({ id, title, price, priceValue, img, qty: 1 });
+      const priceValue = converterPreco(novoItem.price) * quantidadeFinal;
+      carrinho.push({
+        id: novoItem.id,
+        title: novoItem.title,
+        price: novoItem.price,
+        priceValue: priceValue,
+        img: novoItem.img,
+        qty: quantidadeFinal
+      });
     }
-    saveCart(cart);
 
-    // Dispatch event so other UI can react
-    try{ window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart })); }catch(e){}
+    salvarCarrinho(carrinho);
 
-    // visual feedback
-    const btn = this;
-    btn.disabled = true;
-    const prevText = btn.textContent;
-    btn.textContent = 'Adicionado ✓';
+    // Dispara evento para outros componentes
+    try {
+      window.dispatchEvent(new CustomEvent('cartUpdated', { detail: carrinho }));
+    } catch(e) {
+      console.error('Erro ao disparar evento cartUpdated:', e);
+    }
+  }
+
+  /**
+   * Exibe feedback visual após adicionar ao carrinho
+   * @param {HTMLElement} botao - Botão que foi clicado
+   * @param {Function} callback - Função a executar após feedback
+   */
+  function exibirFeedbackCarrinho(botao, callback) {
+    botao.disabled = true;
+    const textoOriginal = botao.textContent;
+    botao.textContent = 'Adicionado ✓';
+
     setTimeout(() => {
-      btn.textContent = prevText;
-      btn.disabled = false;
-      closeModal();
-    }, 700);
+      botao.textContent = textoOriginal;
+      botao.disabled = false;
+      if(callback) callback();
+    }, FEEDBACK_DELAY_MS);
+  }
+
+  // ==================== EVENT LISTENERS ====================
+
+  // Fecha modal ao clicar no overlay ou botão fechar
+  modalOverlay.addEventListener('click', (evento) => {
+    if(evento.target === modalOverlay || evento.target.classList.contains('modal-close')) {
+      fecharModal();
+    }
+  });
+
+  // Delegação: abre modal ao clicar no ícone de olho
+  document.addEventListener('click', (evento) => {
+    const iconeOlho = evento.target.closest('i.fa-eye');
+    if(!iconeOlho) return;
+    
+    const card = iconeOlho.closest(SELECTORS.CARD);
+    if(card) abrirModal(card);
+  });
+
+  // Delegação: abre modal ao clicar no card (exceto controles de adicionar ao carrinho)
+  document.addEventListener('click', (evento) => {
+    const card = evento.target.closest(SELECTORS.CARD);
+    if(!card) return;
+
+    // Ignora cliques em controles de carrinho e ícone de olho
+    if(evento.target.closest('.add-cart') || 
+       evento.target.closest('.btn-secondary') || 
+       evento.target.closest('i.fa-eye')) {
+      return;
+    }
+
+    abrirModal(card);
+  });
+
+  // Controles de quantidade
+  if(elementos.botaoDiminuirQtd) {
+    elementos.botaoDiminuirQtd.addEventListener('click', () => alterarQuantidade(-1));
+  }
+  if(elementos.botaoAumentarQtd) {
+    elementos.botaoAumentarQtd.addEventListener('click', () => alterarQuantidade(1));
+  }
+
+  // Adiciona ao carrinho ao clicar em "Fazer Pedido"
+  elementos.botaoPedido.addEventListener('click', function() {
+    const item = {
+      id: this.dataset.pratoId || '(sem id)',
+      title: this.dataset.pratoTitle || '(sem titulo)',
+      price: this.dataset.pratoPrice || '(sem preco)',
+      img: this.dataset.pratoImg || ''
+    };
+
+    const quantidadeSelecionada = parseInt(elementos.quantidade?.textContent || DEFAULT_QUANTITY, 10) || DEFAULT_QUANTITY;
+    adicionarAoCarrinho(item, quantidadeSelecionada);
+    exibirFeedbackCarrinho(this, fecharModal);
   });
 
 })();

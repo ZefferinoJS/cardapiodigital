@@ -13,11 +13,7 @@
     const badge = document.querySelector('.cart-badge');
     const subtotalEl = document.getElementById('cart-subtotal');
 
-    function formatPriceList(cart) {
-        // returns a display string for subtotal (now computes numeric subtotal when possible)
-        const count = cart.reduce((s, i) => s + (i.qty || 1), 0);
-        return `(${count} itens)`;
-    }
+    // (removed unused formatPriceList)
 
     function renderCart() {
         const cart = getCart();
@@ -66,7 +62,7 @@
             <span class="qty-value">${qty}</span>
             <button class="qty-increase" data-id="${item.id}" aria-label="Aumentar quantidade">+</button>
           </div>
-          <button class="cart-remove" data-id="${item.id}" aria-label="Remover ${item.title}">&times;</button>
+          <button class="cart-remove" data-id="${item.id}" aria-label="Remover ${item.title}"><i class="fa fa-trash"></i></button>
         </div>
       `;
             itemsEl.appendChild(div);
@@ -118,23 +114,19 @@
             const cart = getCart();
             if (!cart || cart.length === 0) { showMessage('Carrinho vazio'); return; }
             checkoutBtn.disabled = true; checkoutBtn.classList.add('cart-checkout-disabled');
-            // Try to POST to /checkout, fallback to simulated success
-            fetch('/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart }) })
+            // POST to /checkout with cart data
+            fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart: cart, tableNumber: '1', restaurantSlug: 'minha-lanchonete' }) })
                 .then(res => {
-                    if (res.ok) return res.json().catch(() => ({}));
-                    throw new Error('Erro no servidor');
+                    if (res.ok) return res.json();
+                    return res.json().then(err => { throw new Error(err.error || 'Erro no servidor'); });
                 })
                 .then(data => {
-                    showMessage('Compra finalizada com sucesso!', 2500);
+                    showMessage('Compra finalizada com sucesso! Pedido #' + data.order_id, 2500);
                     saveCart([]); renderCart(); window.dispatchEvent(new CustomEvent('cartUpdated', { detail: [] }));
                 })
                 .catch(err => {
-                    // fallback: simulate success after short delay
-                    console.warn('Checkout falhou, simulando sucesso', err);
-                    setTimeout(() => {
-                        showMessage('Compra simulada (sem backend). Carrinho limpo.', 2500);
-                        saveCart([]); renderCart(); window.dispatchEvent(new CustomEvent('cartUpdated', { detail: [] }));
-                    }, 800);
+                    console.error('Checkout error:', err);
+                    showMessage('Erro ao finalizar compra: ' + err.message, 3000);
                 })
                 .finally(() => { checkoutBtn.disabled = false; checkoutBtn.classList.remove('cart-checkout-disabled'); });
         }

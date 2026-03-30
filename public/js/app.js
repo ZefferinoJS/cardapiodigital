@@ -18,6 +18,20 @@
     });
   }
 
+  function truncate(str, max = 16){
+    if(str === null || str === undefined) return '';
+    const s = String(str);
+    return s.length <= max ? s : s.slice(0, max) + '...';
+  }
+
+  function formatCurrency(v){
+    try{
+      return new Intl.NumberFormat('pt-AO',{ style:'currency', currency:'AOA', maximumFractionDigits:2 }).format(Number(v));
+    }catch(e){
+      return `AO ${Number(v).toFixed(2)}`;
+    }
+  }
+
   // Try primary path (/api/<path>) then fallback to (/api/index.php/<path>)
   async function tryFetchJson(url, opts){
     const res = await fetch(url, opts);
@@ -115,9 +129,7 @@
     // menu: {categories: [ { id, name, slug, items: [...] } ] }
     const categories = menu.categories || [];
 
-    function formatCurrency(v){
-      try{ return new Intl.NumberFormat('pt-AO',{ style:'currency', currency:'AOA', maximumFractionDigits:2 }).format(Number(v)); }catch(e){ return `AO ${Number(v).toFixed(2)}`; }
-    }
+    // (moved globally) formatCurrency available above
 
     // Main container: use data-category="populares" if present; else the first .prato-lista
     const mainContainer = qs('.prato-lista[data-category="populares"]') || qs('.prato-lista:not([data-category])') || qs('.prato-lista');
@@ -132,17 +144,20 @@
           const priceDisplay = (item.price !== undefined && item.price !== null) ? formatCurrency(item.price) : (item.price_display || 'AO 0,00');
           const cookTime = item.cook_time || item.prep_time || '';
           html += `
-            <div class="prato-card" data-id="${escapeHtml(item.id)}" data-desc="${escapeHtml(item.description||'')}" data-price="${escapeHtml(priceDisplay)}" data-ingredients="${escapeHtml(ingredients)}" data-rating='${JSON.stringify(rating)}'>
+              <div class="prato-card populares" data-id="${escapeHtml(item.id)}" data-desc="${escapeHtml(item.description||'')}" data-price="${escapeHtml(priceDisplay)}" data-ingredients="${escapeHtml(ingredients)}" data-category="${escapeHtml(cat.name || cat.slug || 'Categoria')}" data-rating='${JSON.stringify(rating)}'>
               <div class="reacion"><i class="fa-regular fa-eye"></i> <i class="fa-regular fa-heart"></i></div>
-              <img src="${escapeHtml(item.image || 'images/crispy-baked-meat-potatoes.webp')}" alt="${escapeHtml(item.name)}">
-              <h3>${escapeHtml(item.name)}</h3>
+              <h3>${escapeHtml(truncate(item.name,16))}</h3>
               <div class="time-rank">
                 <span><i class="fas fa-clock"></i> ${escapeHtml(cookTime)} ${cookTime ? 'min' : ''}</span>
                 <span><i class="fas fa-star"></i> ${rating.avg ? rating.avg.toFixed(1) : '—'}</span>
               </div>
               <div class="preco-add">
                 <span class="preco">${escapeHtml(priceDisplay)}</span>
-                <a href="#" class="btn-secondary" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho"><i class="fas fa-cart-plus"></i></a>
+                <a href="#" class="btn-secondary" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho"><i class="fa-solid fa-circle-plus"></i></a>
+              </div>
+              <div class="prato-card-fndo-circulo"></div>
+              <div class="prato-card-img">  
+                <img src="${escapeHtml(item.image || 'images/crispy-baked-meat-potatoes.webp')}" alt="${escapeHtml(item.name)}">
               </div>
             </div>`;
         });
@@ -162,17 +177,17 @@
         const priceDisplay = (item.price !== undefined && item.price !== null) ? formatCurrency(item.price) : (item.price_display || 'AO 0,00');
         const cookTime = item.cook_time || item.prep_time || '';
         catHtml += `
-          <div class="prato-card" data-id="${escapeHtml(item.id)}" data-desc="${escapeHtml(item.description||'')}" data-price="${escapeHtml(priceDisplay)}" data-ingredients="${escapeHtml(ingredients)}" data-rating='${JSON.stringify(rating)}'>
+          <div class="prato-card especifico" data-id="${escapeHtml(item.id)}" data-desc="${escapeHtml(item.description||'')}" data-price="${escapeHtml(priceDisplay)}" data-ingredients="${escapeHtml(ingredients)}" data-category="${escapeHtml(cat.name || cat.slug || 'Categoria')}" data-rating='${JSON.stringify(rating)}'>
             <div class="reacion"><i class="fa-regular fa-eye"></i> <i class="fa-regular fa-heart"></i></div>
             <img src="${escapeHtml(item.image || 'images/crispy-baked-meat-potatoes.webp')}" alt="${escapeHtml(item.name)}">
-            <h3>${escapeHtml(item.name)}</h3>
+            <h3>${escapeHtml(truncate(item.name,16))}</h3>
             <div class="time-rank">
               <span><i class="fas fa-clock"></i> ${escapeHtml(cookTime)} ${cookTime ? 'min' : ''}</span>
               <span><i class="fas fa-star"></i> ${rating.avg ? rating.avg.toFixed(1) : '—'}</span>
             </div>
             <div class="preco-add">
               <span class="preco">${escapeHtml(priceDisplay)}</span>
-              <a href="#" class="btn-secondary" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho"><i class="fas fa-cart-plus"></i></a>
+              <a href="#" class="btn-secondary" aria-label="Adicionar ${escapeHtml(item.name)} ao carrinho"><span>Adicionar</span> <i class="fa-solid fa-circle-plus"></i></a>
             </div>
           </div>`;
       });
@@ -183,13 +198,146 @@
     document.dispatchEvent(new CustomEvent('menu:rendered'));
   }
 
+  // Render Top sections: first shows 4 most voted; others show categories
+  function renderTopSections(menu){
+    const categories = menu.categories || [];
+    const mainEl = qs('main') || document.body;
+    const topSection = qs('.top-five:not(.categoria)');
+
+    // Build flattened list to compute Top 4 by total votes
+    const flattened = [];
+    categories.forEach(cat => {
+      const catNome = cat.name || cat.slug || 'Categoria';
+      (cat.items || []).forEach(item => flattened.push({ ...item, __categoria: catNome }));
+    });
+    const byVotes = (it) => (it.rating && typeof it.rating.total === 'number') ? it.rating.total : 0;
+    flattened.sort((a,b)=> byVotes(b) - byVotes(a));
+    const top4 = flattened.slice(0,4);
+
+    function setHeader(el, title){
+      const h = el.querySelector('.header-pratos h2');
+      if(h) h.textContent = escapeHtml(title);
+    }
+    function renderCards(el, items, limit, categoria = ''){
+      const wrap = el.querySelector('.top-five-cards');
+      if(!wrap) return;
+      const html = items.map((item, idx)=>{
+        const rating = item.rating || {avg:0,total:0,counts:{}};
+        const priceDisplay = (item.price !== undefined && item.price !== null) ? formatCurrency(item.price) : (item.price_display || 'AO 0,00');
+        const image = item.image || 'images/crispy-baked-meat-potatoes.webp';
+        const hiddenStyle = (typeof limit === 'number' && idx >= limit) ? 'style="display:none"' : '';
+        const categoriaCard = item.category || item.categoria || item.__categoria || categoria || 'Categoria';
+        return `
+          <div class="card categoria-card" ${hiddenStyle} data-id="${escapeHtml(item.id)}" data-desc="${escapeHtml(item.description||'')}" data-price="${escapeHtml(priceDisplay)}" data-img="${escapeHtml(image)}" data-category="${escapeHtml(categoriaCard)}" data-rating='${JSON.stringify(rating)}'>
+            <div class="space-image">
+              <div class="descricao">
+                <h3>${escapeHtml(truncate(item.name,16))}</h3>
+                <p class="descricao-breve">${escapeHtml(truncate(item.description || '', 36))}</p>
+                <div class="rank">
+                  <div class="preco">${escapeHtml(priceDisplay)}</div>
+                  <div class="details"><i class="fas fa-star"></i><span>${rating.avg ? rating.avg.toFixed(1) : '—'}</span></div>
+                </div>
+                <div class="accoes">
+                  <div class="ver"><span>Ver detalhes</span><i class="fas fa-eye"></i></div>
+                  <div class="add-cart"><span>Adicionar</span><i class="fas fa-plus-circle"></i></div>
+                </div>
+              </div>
+              <img src="${escapeHtml(image)}" alt="${escapeHtml(item.name)}">
+            </div>
+          </div>`;
+      }).join('');
+      wrap.innerHTML = html || '<p>Nenhum prato encontrado.</p>';
+    }
+
+    // Render Top 4 section if present
+    if(topSection){
+      setHeader(topSection, 'Top 4 Mais Votados');
+      renderCards(topSection, top4);
+    }
+
+    // Remove any manually inserted category sections
+    qsa('.top-five.categoria').forEach(el => el.remove());
+
+    // Dynamically create a section per category with items
+    categories.forEach(cat => {
+      if(!cat.items || cat.items.length === 0) return;
+      const section = document.createElement('section');
+      section.className = 'top-five categoria';
+      section.innerHTML = `
+        <div class="header-pratos">
+          <h2>${escapeHtml(cat.name || cat.slug || 'Categoria')}</h2> <i class="fas fa-chevron-down"></i>
+        </div>
+        <div class="top-five-cards"></div>
+      `;
+      mainEl.appendChild(section);
+      // Render all items, hiding beyond the first 4 initially
+      renderCards(section, cat.items, 4, cat.name || cat.slug || 'Categoria');
+
+      // Toggle remaining items on chevron click
+      const chevron = section.querySelector('.header-pratos .fa-chevron-down');
+      let expanded = false;
+      if(chevron){
+        chevron.style.cursor = 'pointer';
+        chevron.addEventListener('click', () => {
+          const cards = Array.from(section.querySelectorAll('.categoria-card'));
+          if(!expanded){
+            cards.forEach((card, idx) => { if(idx >= 4) card.style.display = ''; });
+            section.classList.add('expanded');
+            expanded = true;
+            chevron.classList.remove('fa-chevron-down');
+            chevron.classList.add('fa-chevron-up');
+          } else {
+            cards.forEach((card, idx) => { if(idx >= 4) card.style.display = 'none'; });
+            section.classList.remove('expanded');
+            expanded = false;
+            chevron.classList.remove('fa-chevron-up');
+            chevron.classList.add('fa-chevron-down');
+          }
+        });
+      }
+    });
+
+    document.dispatchEvent(new CustomEvent('top:rendered'));
+  }
+
+  // Bind add-to-cart on Top sections (.categoria-card)
+  function bindTopActions(){
+    if(window.__topActionsBound) return; window.__topActionsBound = true;
+    document.addEventListener('click', function(e){
+      const add = e.target.closest('.top-five .add-cart i, .top-five .add-cart');
+      if(!add) return;
+      const card = add.closest('.categoria-card');
+      if(!card) return;
+
+      const id = card.dataset.id || '';
+      const title = (card.querySelector('h3')?.textContent || '').trim();
+      const price = card.dataset.price || (card.querySelector('.preco')?.textContent || '').trim();
+      const img = card.dataset.img || (card.querySelector('img')?.getAttribute('src') || '');
+
+      try{
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const existing = cart.find(i => i.id === id);
+        if(existing){ existing.qty = (existing.qty || 1) + 1; }
+        else {
+          const cleaned = String(price).replace(/[A-Za-z\s]/g,'').replace(/\./g,'').replace(',','.');
+          const priceValue = parseFloat(cleaned) || 0;
+          cart.push({ id, title, price, priceValue, img, qty: 1 });
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+      }catch(e){ console.error('Erro ao atualizar carrinho', e); }
+    });
+  }
+
   async function loadMenu(){
     try{
       const path = restaurantSlug ? `menu?slug=${encodeURIComponent(restaurantSlug)}` : 'menu';
       const menu = await apiGet(path);
       // API returns array of categories; normalize to { categories: [...] }
-      if(Array.isArray(menu)) renderMenu({ categories: menu });
-      else renderMenu(menu);
+      const normalized = Array.isArray(menu) ? { categories: menu } : (menu || { categories: [] });
+      renderMenu(normalized);
+      renderTopSections(normalized);
+      bindTopActions();
     }catch(e){
       console.error('Erro carregando menu', e);
     }
