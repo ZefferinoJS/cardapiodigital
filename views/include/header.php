@@ -1,7 +1,6 @@
 <header>
     <div class="icon">
-        <i class="fas fa-utensils"></i>
-        <span>O Cardápio</span>
+        <img src="/images/logo/2noback.png" alt="" srcset="">
     </div>
 
     <nav>

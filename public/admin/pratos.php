@@ -14,7 +14,9 @@ $pagina_atual="pratos";
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/admin-dashboard.css">
+    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
     <title><?php echo $titulo." - Admin"; ?></title>
+    
 </head>
 
 <body data-restaurant="minha-lanchonete">

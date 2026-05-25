@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/pratos_populares.css">
     <link rel="stylesheet" href="css/cards-menu.css">
+    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
     <title>O teu cardapio</title>
 </head>
 
@@ -19,17 +20,17 @@
                 <img id="prato-dia-img" src="images/autumn-salad.webp" alt="Prato do Dia">
             </div>
             <div class="container">
-                <div class="destaque-titulo">
+                <div>
+                    <div class="destaque-titulo">
                     <h4>Prato do Dia</h4>
+                    </div>
+                    <h1 id="prato-dia-nome">Salada saudável</h1>
+                    <p id="prato-dia-desc">Salada é uma comida nutricionalmente completa que contém todas as 27 vitaminas essenciais e minerais, proteina, gorduras ácidas essenciais, carboidratos, fibras e fitonutrientes.</p>
+                    <div class="preco-action">
+                        <a href="#" class="btn-primary" id="prato-dia-add"><i class="fas fa-circle-plus"></i><span>Adicionar</span></a>
+                        <span class="preco" id="prato-dia-preco">AO 1,500.00</span>
+                    </div>
                 </div>
-                <h1 id="prato-dia-nome">Salada saudável</h1>
-                <p id="prato-dia-desc">Salada é uma comida nutricionalmente completa que contém todas as 27 vitaminas essenciais e minerais, proteina, gorduras ácidas essenciais, carboidratos, fibras e fitonutrientes.</p>
-                <div class="preco-action">
-                    <a href="#" class="btn-primary" id="prato-dia-add"><i class="fas fa-circle-plus"></i><span>Adicionar</span></a>
-                    <span class="preco" id="prato-dia-preco">AO 1,500.00</span>
-                </div>
-
-            </div>
             <div class="details-dayDish" id="prato-dia-details">
                 <div class="detail-item">
                     <i class="fas fa-bolt"></i>
@@ -44,6 +45,8 @@
                     <span>Sem Glúten</span>
                 </div>
             </div>
+            </div>
+
 
         </section>
 
