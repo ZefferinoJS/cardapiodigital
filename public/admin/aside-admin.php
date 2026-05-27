@@ -15,8 +15,11 @@
         <a href="avaliacoes.php" class="<?php echo ($pagina_atual === 'avaliacoes') ? 'active' : ''; ?>">
             <i class="fas fa-star"></i> <span>Avaliações</span>
         </a>
-        <a href="../index.php">
-            <i class="fas fa-arrow-left"></i> <span>Voltar ao Site</span>
+        <a href="relatorio.php" class="<?php echo ($pagina_atual === 'relatorio') ? 'active' : ''; ?>">
+            <i class="fas fa-chart-bar"></i> <span>Relatórios</span>
+        </a>
+        <a href="../logout.php">
+            <i class="fas fa-arrow-left"></i> <span>Sair</span>
         </a>
     </nav>
 </aside>

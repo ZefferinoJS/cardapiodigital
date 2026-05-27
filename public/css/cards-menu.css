@@ -42,7 +42,7 @@ section.top-five .top-five-cards .card {
     border: 1px solid var(--laranja-claro);
     border-radius: 24px;
     padding: 10px;
-    max-width: 260px;
+    max-width: 300px;
     min-width: 250px;
     text-align: center;
     flex: 1 1 calc(20% - 20px);

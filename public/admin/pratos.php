@@ -1,8 +1,8 @@
 <?php
 // Página de gerenciamento de pratos
-$titulo="Gerenciar Pratos";
-$subtitulo="Gerencie os pratos do restaurante, suas categorias e disponibilidade.";
-$pagina_atual="pratos";
+$titulo = "Gerenciar Pratos";
+$subtitulo = "Gerencie os pratos do restaurante, suas categorias e disponibilidade.";
+$pagina_atual = "pratos";
 ?>
 <!DOCTYPE html>
 <html lang="pt-AO">
@@ -15,8 +15,8 @@ $pagina_atual="pratos";
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/admin-dashboard.css">
     <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo $titulo." - Admin"; ?></title>
-    
+    <title><?php echo $titulo . " - Admin"; ?></title>
+
 </head>
 
 <body data-restaurant="minha-lanchonete">
@@ -28,18 +28,10 @@ $pagina_atual="pratos";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header">
-                    <div class="dashboard-header-inner">
-                        <div class="dh-left">
-                            <h1><?php echo $titulo ?></h1>
-                            <p class="dh-sub"><?php echo $subtitulo?></p>
-                        </div>
-                        <div class="dh-actions">
-                            <button class="btn-primary" id="btn-novo-prato">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                            <button class="btn-primary btn-primary-outline" id="btn-prato-do-dia">
-                                <i class="fas fa-plus"></i> Prato do Dia
-                            </button>
+                    <div class="icon">
+                        <img src="/images/logo/7noback.png" alt="" srcset="">
+                        <div class="hamburguer">
+                            <i class="fas fa-hamburguer"></i>
                         </div>
                     </div>
                     <div class="dashboard-cards">
@@ -83,6 +75,21 @@ $pagina_atual="pratos";
                             </div>
                         </div>
                     </div>
+                    <div class="dashboard-header-inner">
+                        <div class="dh-left">
+                            <h1><?php echo $titulo ?></h1>
+                            <p class="dh-sub"><?php echo $subtitulo ?></p>
+                        </div>
+                        <div class="dh-actions">
+                            <button class="btn-primary" id="btn-novo-prato">
+                                <i class="fas fa-plus"><span>Novo Prato</span></i>
+                            </button>
+                            <button class="btn-primary btn-primary-outline" id="btn-prato-do-dia">
+                                <i class="fas fa-plus"></i> Prato do Dia
+                            </button>
+                        </div>
+                    </div>
+
                 </header>
 
                 <!-- Filtros e Pesquisa -->
@@ -107,18 +114,18 @@ $pagina_atual="pratos";
                         <button id="btn-search"><i class="fas fa-search"></i></button>
                     </div>
                 </section>
-             <!-- Tabela de Pratos -->
+                <!-- Tabela de Pratos -->
                 <section class="admin-table-section">
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Imagem</th>
-                                <th>Nome</th>
-                                <th>Categoria</th>
-                                <th>Preço</th>
-                                <th>Disponível</th>
-                                <th>Avaliação</th>
-                                <th>Ações</th>
+                                <th class="td-imagem">Imagem</th>
+                                <th class="td-nome">Nome</th>
+                                <th class="td-categoria">Categoria</th>
+                                <th class="td-preco">Preço</th>
+                                <th class="td-disponivel">Disponível</th>
+                                <th class="td-avaliacao">Avaliação</th>
+                                <th class="td-acoes">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="pratos-tbody">

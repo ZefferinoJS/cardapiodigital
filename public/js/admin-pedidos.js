@@ -216,6 +216,7 @@
                         <strong>Total: ${formatPrice(totalValue)}</strong>
                     </div>
                     ${order.notes ? `<div class="order-notes"><p><strong>Notas:</strong> ${escapeHtml(order.notes)}</p></div>` : ''}
+                    
                 </div>
             `;
 

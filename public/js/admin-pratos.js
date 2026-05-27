@@ -91,27 +91,27 @@
 
             tbody.innerHTML = items.map(item => `
                 <tr data-id="${item.id}">
-                    <td>
+                    <td class="td-imagem">
                         <img src="/${item.image || '/images/placeholder.png'}" 
                              alt="${item.name}" 
                              class="item-thumb"
                              onerror="this.src='/images/placeholder.png'">
                     </td>
-                    <td><strong>${escapeHtml(item.name)}</strong></td>
-                    <td>${item.category_name || '-'}</td>
-                    <td>${formatPrice(item.price)}</td>
-                    <td>
+                    <td class="td-nome"><strong>${escapeHtml(item.name)}</strong></td>
+                    <td class="td-categoria">${item.category_name || '-'}</td>
+                    <td class="td-preco">${formatPrice(item.price)}</td>
+                    <td class="td-disponivel">
                         <span class="badge ${item.available ? 'badge-success' : 'badge-danger'}">
                             ${item.available ? 'Sim' : 'Não'}
                         </span>
                     </td>
-                    <td>
+                    <td class="td-avaliacao">
                         ${item.avg_rating ? `
                             <i class="fas fa-star" style="color: var(--amarelo-suave);"></i>
                             ${item.avg_rating.toFixed(1)} (${item.total_ratings})
                         ` : '-'}
                     </td>
-                    <td class="actions">
+                    <td class="td-acoes actions">
                         <button class="btn-icon btn-edit" data-id="${item.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>

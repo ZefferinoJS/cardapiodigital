@@ -553,7 +553,9 @@ section.pratos .prato-card.especifico .btn-secondary:hover span{
 .modal-overlay.show {
     opacity: 1;
     pointer-events: auto;
+    overflow: auto;
 }
+
 
 /* Blur background quando modal está aberto */
 body.modal-aberto {
@@ -563,7 +565,7 @@ body.modal-aberto {
     background: var(--branco-puro);
     width: 90%;
     max-width: 720px;
-    border-radius: 24px;
+    border-radius: 18px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     overflow: hidden;
 }
@@ -641,7 +643,7 @@ body.modal-aberto {
 .modal-footer {
     display: flex;
     justify-content: flex-end;
-    padding: 12px 20px;
+    padding: 10px 10px 0px 10px;
     border-top: 1px solid var(--cinza-muito-claro)
 }
 

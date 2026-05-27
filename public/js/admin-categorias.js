@@ -45,16 +45,16 @@
 
             tbody.innerHTML = categories.map(cat => `
                 <tr data-id="${cat.id}">
-                    <td><strong>${escapeHtml(cat.name)}</strong></td>
-                    <td>${cat.slug}</td>
-                    <td><span class="badge badge-info">--</span></td>
-                    <td>${cat.position}</td>
-                    <td>
+                    <td class="td-nome"><strong>${escapeHtml(cat.name)}</strong></td>
+                    <td class="td-slug">${cat.slug}</td>
+                    <td class="td-pratos"><span class="badge badge-info">--</span></td>
+                    <td class="td-posicao">${cat.position}</td>
+                    <td class="td-ativa">
                         <span class="badge ${cat.active ? 'badge-success' : 'badge-danger'}">
                             ${cat.active ? 'Sim' : 'Não'}
                         </span>
                     </td>
-                    <td class="actions">
+                    <td class="actions td-acoes">
                         <button class="btn-icon btn-edit" data-id="${cat.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>

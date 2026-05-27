@@ -22,8 +22,8 @@
     color: var(--branco-puro);
     padding: 20px 0;
     position: sticky;
-    top: 40px;
-    height: 90vh;
+    top: 10px;
+    height: 94vh;
     overflow-y: auto;
 }
 
@@ -94,7 +94,7 @@
 
 /* Main Content */
 .admin-main {
-    margin-left: 10px;
+    /*margin-left: 10px;*/
     flex: 1;
     padding: 0;
 }
@@ -192,7 +192,11 @@
 .search-group {
     display: flex;
     gap: 8px;
-    flex: 1;
+    /* flex: 1; */
+    max-width: 655px;
+    align-items: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
 }
 
 .search-group input {
@@ -222,6 +226,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+
 .admin-table {
     width: 100%;
     border-collapse: collapse;
@@ -246,6 +251,7 @@
     border-bottom: 1px solid var(--cinza-bem-claro);
     color: var(--cinza-escuro);
     font-size: 14px;
+    height: 100px;
 }
 
 .admin-table tbody tr:hover {
@@ -323,12 +329,14 @@
 /* Modal Enhancements */
 .modal-large {
     max-width: 800px;
+    max-height: 650px;
+    overflow: auto;
 }
 
 .modal-body-form {
     padding: 10px;
-    border-radius: 24px;
-    margin: 20px;
+    border-radius: 14px;
+    margin: 10px;
     border: 1px solid var(--laranja-primario);
 }
 
@@ -397,7 +405,6 @@
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    padding: 20px;
     border-top: 1px solid var(--cinza-bem-claro);
     background-color: var(--cinza-muito-claro);
 }
@@ -575,7 +582,7 @@
     }
     
     .admin-main {
-        margin-left: 80px;
+        /*margin-left: 80px;*/
     }
     
     .form-row {
@@ -587,8 +594,7 @@
         align-items: stretch;
     }
     
-    .filter-group select,
-    .search-group input {
+    .filter-group select{
         min-width: 100%;
     }
 
@@ -602,5 +608,11 @@
 
     .stat-value {
         font-size: 24px;
+    }
+
+    .td-categoria,.td-avaliacao,
+    .td-disponivel,.td-preco,
+    .td-slug,.td-pratos,.td-posicao{
+        display: none;
     }
 }

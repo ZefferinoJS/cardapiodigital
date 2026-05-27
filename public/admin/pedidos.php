@@ -27,6 +27,9 @@ $pagina_atual = "pedidos";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad ">
+                    <div class="icon">
+                        <img src="/images/logo/7noback.png" alt="" srcset="">
+                    </div>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?php echo $titulo ?></h1>

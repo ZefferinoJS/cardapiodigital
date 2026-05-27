@@ -27,6 +27,9 @@ $pagina_atual="categorias";
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad">
+                    <div class="icon">
+                        <img src="/images/logo/7noback.png" alt="" srcset="">
+                    </div>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
                             <h1><?php echo $titulo ?></h1>
@@ -46,12 +49,12 @@ $pagina_atual="categorias";
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Nome</th>
-                                <th>Slug</th>
-                                <th>Pratos</th>
-                                <th>Posição</th>
-                                <th>Ativa</th>
-                                <th>Ações</th>
+                                <th class="td-nome">Nome</th>
+                                <th class="td-slug">Slug</th>
+                                <th class="td-pratos">Pratos</th>
+                                <th class="td-posicao">Posição</th>
+                                <th class="td-ativa">Ativa</th>
+                                <th class="td-acoes">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="categorias-tbody">
