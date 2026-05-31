@@ -397,6 +397,6 @@ if (!is_file($contentTemplate)) {
 }
 
 
-include 'layoutAdmin.php';
+require __DIR__ . '/templates/layout_portal.php';
 
 ?>
