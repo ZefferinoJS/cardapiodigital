@@ -20,7 +20,7 @@
                     <nav class="admin-nav">
                         <?php foreach ($menuItems as $item) :
                             if (($item['routa'] != 'configuracoes') && ($item['routa'] != 'perfil') && ($item['routa'] != 'notificacoes')): ?>
-                                <a class="<?= $routa === $item['routa'] ? ' active' : '' ?>" href="index.php?routa=<?= $escape($item['routa']) ?>">
+                                <a class="<?= $routa === $item['routa'] ? ' active' : '' ?>" href="/admin.php?routa=<?= $escape($item['routa']) ?>">
                                     <i class="<?= $escape($item['icon']) ?>"></i>
                                     <span><?= $escape($item['label']) ?></span>
                                 </a>
@@ -30,11 +30,12 @@
                         ?>
 
                     </nav>
-                    <div class="logout">
-                        <a href="../logout.php">
+                    <form method="post" action="/admin.php" class="logout">
+                        <input type="hidden" name="action" value="logout">
+                        <button type="submit" class="menu-logout">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i></i> <span>Sair</span>
-                        </a>
-                    </div>
+                        </button>
+                    </form>
                 </aside>
             </div>
 
@@ -43,12 +44,15 @@
 
                 <!-- ── Header + Summary cards ── -->
                 <header class="dashboard-header top">
-                    <?php include 'header-admin.php'; ?>
-                </header>
-                <header class="dashboard-header bottom">
-                    <?php include 'header-admin.php'; ?>
+                    <div class="icon">
+                        <img src="/assets/images/logo/7noback.png" alt="" srcset="">
+                        <div class="hamburguer">
+                            <i class="fa-solid fa-bars"></i>
+                        </div>
+                    </div>
                 </header>
 
+                <?php require $contentTemplate; ?>
 
 
 
@@ -56,7 +60,7 @@
         </div>
     </div>
 
-    <script src="/assets/js/adminMEnu.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
 </body>
 
 </html>

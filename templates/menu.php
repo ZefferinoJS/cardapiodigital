@@ -102,11 +102,7 @@
         
     </footer>
 
-    <script src="/assets/js/exibir-prato-dia.js" defer></script>
-    <script src="/assets/js/modal.js" defer></script>
-    <script src="/assets/js/cart.js" defer></script>
-    <script src="/assets/js/carousel.js" defer></script>
-    <script src="/assets/js/app.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
 
 </body>
 

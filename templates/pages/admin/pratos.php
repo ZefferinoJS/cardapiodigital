@@ -1,23 +1,4 @@
 
-<!DOCTYPE html>
-<html lang="pt-AO">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo $titulo . " - Admin"; ?></title>
-
-</head>
-
-<body data-restaurant="minha-lanchonete">
-    <div class="admin-body">
-        <div class="admin-container">
-            <!-- Sidebar -->
-            <?php include 'aside-admin.php'; ?>
-            <!-- Main Content -->
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header">
@@ -91,7 +72,6 @@
                     <!-- Carregado dinamicamente -->
                 </div>
             </main>
-        </div>
 
         <!-- Modal para Selecionar Prato do Dia -->
         <div class="modal-overlay" id="modal-prato-dia">
@@ -188,12 +168,3 @@
             </div>
         </div>
     </div>
-
-
-    <script src="../js/prato-do-dia.js" defer></script>
-    <script src="../js/admin-pratos.js" defer></script>
-    <script src="../js/admin-dashboard.js" defer></script>
-    <script src="../js/adminMEnu.js" defer></script>
-</body>
-
-</html>

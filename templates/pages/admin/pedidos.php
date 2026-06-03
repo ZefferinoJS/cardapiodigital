@@ -1,35 +1,16 @@
-<!DOCTYPE html>
-<html lang="pt-AO">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo $titulo . " - Admin"; ?></title>
-</head>
-
-<body data-restaurant="minha-lanchonete">
-    <div class="admin-body">
-        <div class="admin-container">
-            <!-- Sidebar -->
-            <?php include 'aside-admin.php'; ?>
-            <!-- Main Content -->
             <main class="admin-main">
                 <!-- Dashboard Top Banner -->
                 <header class="dashboard-header dashboard-header-ad ">
-                    <?php include 'header-admin.php'; ?>
                     <div class="dashboard-header-inner">
                         <div class="dh-left">
-                            <h1><?php echo $titulo ?></h1>
-                            <p class="dh-sub"><?php echo $subtitulo ?></p>
+                            <h1><?=  $escape( $pageTitle) ?></h1>
+                            <p class="dh-sub"><?= $escape( $pageSubtitle) ?></p>
                         </div>
                         <div class="dh-actions">
                             <button class="btn-primary" id="btn-nova-cadeira">
                                 <i class="fas fa-plus"></i> Nova Mesa
                             </button>
-                            <button class="btn-primary btn-primary-outline" id="btn-ver-lista-cadeiras">
                                 <i class="fas fa-list"></i> Ver todas as mesas
                             </button>
                         </div>
@@ -84,7 +65,7 @@
                     </table>
                 </section>
             </main>
-        </div>
+
 
         <!-- Modal para Detalhes do Pedido -->
         <div class="modal-overlay" id="modal-pedido">
@@ -113,7 +94,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Modal para Nova Mesa -->
     <div class="modal-overlay" id="modal-nova-mesa">
@@ -189,8 +169,3 @@
         </div>
     </div>
 
-    <script src="../js/admin-pedidos.js" defer></script>
-    <script src="../js/adminMEnu.js" defer></script>
-</body>
-
-</html>

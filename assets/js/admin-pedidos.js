@@ -2,7 +2,7 @@
 (function() {
     'use strict';
 
-    const API_BASE = '/api';
+    const API_BASE = '/assets/api';
     const RESTAURANT_ID = 1;
 
     // Elements

@@ -6,7 +6,7 @@
 // POST /public/api/index.php/orders       -> create order
 // POST /public/api/index.php/ratings      -> submit rating
 
-$config = require __DIR__ . '/../../config/db.php';
+$config = require_once __DIR__ .'/../../config/db.php';
 try{
     $pdo = new PDO($config['dsn'], $config['user'], $config['pass'], $config['options']);
 }catch(PDOException $e){

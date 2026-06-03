@@ -1880,28 +1880,29 @@ body.modal-aberto {
 
 
 .admin-nav a,
-.logout a {
-  width: 80px;
-  margin: 10px auto;
-  padding: 10px;
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  font-size: 15px;
-  border-radius: 8px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  color: var(--branco-puro);
+.logout button {
+    width: 80px;
+    margin: 5px auto;
+    padding: 5px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 15px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    color: var(--branco-puro);
 }
 
 .logout {
   border-top: 2px solid rgba(255, 255, 255, 0.5);
 }
 
-.logout a {
+.logout button {
   background-color: var(--branco-puro);
   border-radius: 12px;
+  border: none;
   color: var(--dash-text);
 }
 

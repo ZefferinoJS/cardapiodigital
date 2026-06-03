@@ -1,29 +1,9 @@
 
-<!DOCTYPE html>
-<html lang="pt-AO">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="shortcut icon" href="/images/logo/5noback.png" type="image/x-icon">
-    <title><?php echo htmlspecialchars($titulo) . " - Admin"; ?></title>
-</head>
- 
-<body data-restaurant="minha-lanchonete">
-<div class="admin-body">
-    <div class="admin-container">
- 
-        <!-- Sidebar -->
-        <?php include 'aside-admin.php'; ?>
- 
+
         <!-- Main Content -->
         <main class="admin-main">
  
             <!-- ── Header + Summary cards ── -->
-            <header class="dashboard-header top">
-                <?php include 'header-admin.php'; ?>
-            </header>
             <header class="dashboard-header bottom">
                 <div class="dashboard-cards">
                     <!-- Total Pratos -->
@@ -193,9 +173,5 @@
             </section>
  
         </main>
-    </div>
-</div>
  
-<script src="../js/adminMEnu.js" defer></script>
-</body>
-</html>
+
