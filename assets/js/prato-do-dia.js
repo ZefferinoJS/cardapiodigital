@@ -5,7 +5,7 @@
 (function() {
     'use strict';
 
-    const API_BASE = '/api';
+    const API_BASE = '/assets/api';
     const PRATO_DIA_KEY = 'prato_do_dia'; // localStorage key
 
     // Elementos DOM

@@ -61,6 +61,8 @@
     </div>
 
     <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/modal.js" defer></script>
+      <script src="/assets/js/prato-do-dia.js" defer></script>
 </body>
 
 </html>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 10, 2025 at 05:36 PM
+-- Generation Time: Jun 04, 2026 at 08:55 AM
 -- Server version: 8.4.8-0ubuntu0.25.10.1
 -- PHP Version: 8.4.11
 
@@ -37,6 +37,13 @@ CREATE TABLE `admin_users` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `admin_users`
+--
+
+INSERT INTO `admin_users` (`id`, `restaurant_id`, `name`, `email`, `password_hash`, `role`, `created_at`, `updated_at`) VALUES
+(1, 1, 'Zeferino Chimuco', 'zeferinomiguel88@gmail.com', '$2y$12$cncDo.r6jV6hjHqlaO1VQeH82VR0zAph1cNfnvmcYLaDehrmCxrzS', 'manager', '2026-06-01 22:10:31', '2026-06-01 22:10:31');
 
 -- --------------------------------------------------------
 
@@ -183,25 +190,25 @@ CREATE TABLE `menu_items` (
 --
 
 INSERT INTO `menu_items` (`id`, `restaurant_id`, `category_id`, `name`, `slug`, `description`, `price`, `available`, `image`, `cook_time_minutes`, `created_at`, `updated_at`, `featured`) VALUES
-(1, 1, 1, 'Salada Fresca', '', 'Alface, tomate, cebola roxa e molho caseiro', 2500.00, 1, 'images/salada.webp', 15, '2025-12-05 19:38:07', '2026-05-26 23:42:49', 0),
-(2, 1, 2, 'Hambúrguer Suculento', '', 'Hambúrguer com queijo e molho especial', 3500.00, 1, 'images/hamburguer.webp', 20, '2025-12-05 19:38:07', '2026-05-26 23:42:35', 0),
-(3, 1, 1, 'Salada Grega', '', 'Salada com queijo feta, azeitonas e tomate', 2800.00, 1, 'images/salada-grega.webp', 10, '2025-12-05 19:38:07', '2026-05-26 23:42:18', 0),
-(4, 1, 1, 'Salada Cesar', '', 'Alface romana, croutons e molho cesar', 3200.00, 1, 'images/salada-cesar.webp', 12, '2025-12-05 19:38:07', '2026-05-26 23:42:04', 0),
-(5, 1, 2, 'Hambúrguer Duplo', '', 'Dois hambúrgueres com queijo e bacon', 3500.00, 1, 'images/hamburguer-duplo.webp', 25, '2025-12-05 19:38:07', '2026-05-26 23:41:06', 0),
-(6, 1, 5, 'Hambúrguer Vegetariano', '', 'Hambúrguer de grão de bico com legumes', 3800.00, 1, 'images/hamburguer-veg.webp', 18, '2025-12-05 19:38:07', '2026-05-26 23:40:49', 0),
-(7, 1, 3, 'Suco Natural', '', 'Suco fresco de frutas da estação', 1200.00, 1, 'images/suco.webp', 5, '2025-12-05 19:38:07', '2026-05-26 23:40:33', 0),
-(8, 1, 3, 'Refrigerante', '', 'Refrigerante gelado 330ml', 650.00, 1, 'images/refrigerante.webp', 2, '2025-12-05 19:38:07', '2026-05-26 23:40:01', 0),
-(9, 1, 3, 'Água Mineral', '', 'Água mineral 500ml', 350.00, 1, 'images/agua.webp', 1, '2025-12-05 19:38:08', '2026-05-26 23:39:40', 0),
-(10, 1, 4, 'Ressois', '', 'Feito com trigo sem glutem e com recheio de carne de cordeiro com malagueta, cenoura e queijo', 4000.00, 1, 'images/crispy-baked-meat-potatoes.webp', 23, '2025-12-20 20:41:45', '2026-05-24 12:03:37', 0),
-(11, 1, 6, 'Hambúrguer Clássico', '', 'Pão, carne, queijo e molho especial', 3500.00, 1, 'images/hamburguer-classico.webp', 15, '2025-12-20 23:11:15', '2026-05-26 23:39:19', 0),
-(12, 1, 6, 'Sanduíche Natural', '', 'Peito de frango, alface, tomate e maionese', 2200.00, 1, 'images/sanduiche-natural.webp', 8, '2025-12-20 23:11:15', '2026-05-26 23:39:06', 0),
-(13, 1, 7, 'Frango Grelhado', '', 'Frango marinado, grelhado com legumes', 4800.00, 1, 'images/frango-grelhado.webp', 20, '2025-12-20 23:11:15', '2026-05-26 23:38:51', 0),
-(14, 1, 7, 'Feijoada', '', 'Feijoada completa com arroz e farofa', 5500.00, 1, 'images/feijoada.webp', 30, '2025-12-20 23:11:15', '2026-05-26 23:38:39', 0),
-(15, 1, 3, 'Suco de Maracujá', '', 'Suco natural de maracujá 300ml', 8000.00, 1, 'images/suco-maracuja.webp', NULL, '2025-12-20 23:11:15', '2026-05-26 23:38:25', 0),
-(16, 1, 3, 'Refrigerante Lata', '', 'Refrigerante gelado 350ml', 6000.00, 1, 'images/refrigerante.webp', NULL, '2025-12-20 23:11:15', '2026-05-26 23:38:12', 0),
-(17, 1, 8, 'Bolo de Chocolate', '', 'Fatia de bolo com cobertura de chocolate', 18000.00, 1, 'images/bolo-chocolate.webp', NULL, '2025-12-20 23:11:15', '2026-05-26 23:38:00', 0),
-(18, 1, 8, 'Mousse de Maracujá', '', 'Mousse suave com calda de maracujá', 6000.00, 1, 'images/mousse-maracuja.webp', NULL, '2025-12-20 23:11:15', '2026-05-26 23:37:33', 0),
-(19, 1, 1, 'Salada saudável', '-alada-saud-vel', 'Salada é uma comida nutricionalmente completa que contém todas as 27 vitaminas essenciais e minerais, proteina, gorduras ácidas essenciais, carboidratos, fibras e fitonutrientes.', 7000.00, 1, 'images/autumn-salad.webp', 15, '2026-01-08 22:53:26', '2026-01-08 22:53:26', 0);
+(1, 1, 1, 'Salada Fresca', '', 'Alface, tomate, cebola roxa e molho caseiro', 2500.00, 1, 'assets/images/salada.webp', 15, '2025-12-05 19:38:07', '2026-05-31 12:47:45', 0),
+(2, 1, 2, 'Hambúrguer Suculento', '', 'Hambúrguer com queijo e molho especial', 3500.00, 1, 'assets/images/hamburguer.webp', 20, '2025-12-05 19:38:07', '2026-05-31 12:47:51', 0),
+(3, 1, 1, 'Salada Grega', '', 'Salada com queijo feta, azeitonas e tomate', 2800.00, 1, 'assets/images/salada-grega.webp', 10, '2025-12-05 19:38:07', '2026-05-31 12:48:01', 0),
+(4, 1, 1, 'Salada Cesar', '', 'Alface romana, croutons e molho cesar', 3200.00, 1, 'assets/images/salada-cesar.webp', 12, '2025-12-05 19:38:07', '2026-05-31 12:48:21', 0),
+(5, 1, 2, 'Hambúrguer Duplo', '', 'Dois hambúrgueres com queijo e bacon', 3500.00, 1, 'assets/images/hamburguer-duplo.webp', 25, '2025-12-05 19:38:07', '2026-05-31 12:48:27', 0),
+(6, 1, 5, 'Hambúrguer Vegetariano', '', 'Hambúrguer de grão de bico com legumes', 3800.00, 1, 'assets/images/hamburguer-veg.webp', 18, '2025-12-05 19:38:07', '2026-05-31 12:48:38', 0),
+(7, 1, 3, 'Suco Natural', '', 'Suco fresco de frutas da estação', 1200.00, 1, 'assets/images/suco.webp', 5, '2025-12-05 19:38:07', '2026-05-31 12:48:44', 0),
+(8, 1, 3, 'Refrigerante', '', 'Refrigerante gelado 330ml', 650.00, 1, 'assets/images/refrigerante.webp', 2, '2025-12-05 19:38:07', '2026-05-31 12:48:50', 0),
+(9, 1, 3, 'Água Mineral', '', 'Água mineral 500ml', 350.00, 1, 'assets/images/agua.webp', 1, '2025-12-05 19:38:08', '2026-05-31 12:48:54', 0),
+(10, 1, 4, 'Ressois', '', 'Feito com trigo sem glutem e com recheio de carne de cordeiro com malagueta, cenoura e queijo', 4000.00, 1, 'assets/images/crispy-baked-meat-potatoes.webp', 23, '2025-12-20 20:41:45', '2026-05-31 12:49:00', 0),
+(11, 1, 6, 'Hambúrguer Clássico', '', 'Pão, carne, queijo e molho especial', 3500.00, 1, 'assets/images/hamburguer-classico.webp', 15, '2025-12-20 23:11:15', '2026-05-31 12:49:04', 0),
+(12, 1, 6, 'Sanduíche Natural', '', 'Peito de frango, alface, tomate e maionese', 2200.00, 1, 'assets/images/sanduiche-natural.webp', 8, '2025-12-20 23:11:15', '2026-05-31 12:49:08', 0),
+(13, 1, 7, 'Frango Grelhado', '', 'Frango marinado, grelhado com legumes', 4800.00, 1, 'assets/images/frango-grelhado.webp', 20, '2025-12-20 23:11:15', '2026-05-31 12:49:14', 0),
+(14, 1, 7, 'Feijoada', '', 'Feijoada completa com arroz e farofa', 5500.00, 1, 'assets/images/feijoada.webp', 30, '2025-12-20 23:11:15', '2026-05-31 12:49:18', 0),
+(15, 1, 3, 'Suco de Maracujá', '', 'Suco natural de maracujá 300ml', 8000.00, 1, 'assets/images/suco-maracuja.webp', NULL, '2025-12-20 23:11:15', '2026-05-31 12:49:22', 0),
+(16, 1, 3, 'Refrigerante Lata', '', 'Refrigerante gelado 350ml', 6000.00, 1, 'assets/images/refrigerante.webp', NULL, '2025-12-20 23:11:15', '2026-05-31 12:49:27', 0),
+(17, 1, 8, 'Bolo de Chocolate', '', 'Fatia de bolo com cobertura de chocolate', 18000.00, 1, 'assets/images/bolo-chocolate.webp', NULL, '2025-12-20 23:11:15', '2026-05-31 12:49:33', 0),
+(18, 1, 8, 'Mousse de Maracujá', '', 'Mousse suave com calda de maracujá', 6000.00, 1, 'assets/images/mousse-maracuja.webp', NULL, '2025-12-20 23:11:15', '2026-05-31 12:49:38', 0),
+(19, 1, 1, 'Salada saudável', '-alada-saud-vel', 'Salada é uma comida nutricionalmente completa que contém todas as 27 vitaminas essenciais e minerais, proteina, gorduras ácidas essenciais, carboidratos, fibras e fitonutrientes.', 7000.00, 1, 'assets/images/autumn-salad.webp', 15, '2026-01-08 22:53:26', '2026-05-31 12:49:43', 0);
 
 -- --------------------------------------------------------
 
@@ -306,7 +313,7 @@ CREATE TABLE `restaurants` (
 --
 
 INSERT INTO `restaurants` (`id`, `name`, `slug`, `timezone`, `created_at`, `updated_at`) VALUES
-(1, 'Minha Lanchonete', 'minha-lanchonete', 'UTC', '2025-12-05 19:38:07', '2025-12-05 19:38:07');
+(1, 'minha lanchonete', 'minha-lanchonete', 'UTC', '2025-12-05 19:38:07', '2025-12-08 15:26:33');
 
 -- --------------------------------------------------------
 
@@ -463,7 +470,7 @@ ALTER TABLE `visits`
 -- AUTO_INCREMENT for table `admin_users`
 --
 ALTER TABLE `admin_users`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `categories`

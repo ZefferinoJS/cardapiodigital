@@ -1,4 +1,5 @@
 <?php
+
 /**
  * admin.php — Controlador principal do painel administrativo
  *
@@ -23,16 +24,19 @@ session_start();
 // ── Constante de restaurante ──────────────────────────────────────────────────
 // Altere aqui (ou mova para config) se o painel servir vários restaurantes.
 define('RESTAURANT_ID', 1);
-$nomesistema="O cardápio";
+$nomesistema = "O cardápio";
 
 // ── Helpers globais ───────────────────────────────────────────────────────────
 $escape = static fn(mixed $v): string =>
-    htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
 function log_error(string $message): void
 {
-    error_log('[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL, 3,
-        __DIR__ . '/logs/php_errors.log');
+    error_log(
+        '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL,
+        3,
+        __DIR__ . '/logs/php_errors.log'
+    );
 }
 
 function redirecionarPara(string $routa): never
@@ -157,7 +161,7 @@ $auth  = $_SESSION['auth'] ?? null;
 if (!$auth) {
     $loginError = (string) ($_SESSION['login_error'] ?? '');
     unset($_SESSION['login_error']);
-    $pageTitle ="Login";
+    $pageTitle = "Login";
     require __DIR__ . '/templates/login.php';
     exit;
 }
@@ -174,18 +178,15 @@ $menus = [
         ['routa' => 'avaliacoes',   'icon' => 'fas fa-star',                'label' => 'Avaliações'],
         ['routa' => 'relatorio',    'icon' => 'fa-solid fa-chart-line',     'label' => 'Relatório'],   // ← ícone corrigido
         ['routa' => 'usuarios',     'icon' => 'fa-solid fa-users',          'label' => 'Utilizadores'],
-        ['routa' => 'perfil',       'icon' => 'fa-solid fa-user',           'label' => 'Perfil'],
-        ['routa' => 'configuracoes','icon' => 'fa-solid fa-gear',           'label' => 'Configurações'],
+        ['routa' => 'configuracoes', 'icon' => 'fa-solid fa-gear',           'label' => 'Configurações'],
         ['routa' => 'notificacoes', 'icon' => 'fa-solid fa-bell',           'label' => 'Notificações'],
     ],
     'staff' => [
         ['routa' => 'pedidos',    'icon' => 'fas fa-receipt',         'label' => 'Pedidos'],
-        ['routa' => 'perfil',     'icon' => 'fa-solid fa-user',       'label' => 'Perfil'],
-        ['routa' => 'notificacoes','icon' => 'fa-solid fa-bell',      'label' => 'Notificações'],
+        ['routa' => 'notificacoes', 'icon' => 'fa-solid fa-bell','label' => 'Notificações'],
     ],
     'kitchen' => [
         ['routa' => 'pedidos',    'icon' => 'fas fa-receipt',         'label' => 'Pedidos'],
-        ['routa' => 'perfil',     'icon' => 'fa-solid fa-user',       'label' => 'Perfil'],
     ],
 ];
 
@@ -198,7 +199,7 @@ $titles = [
     'relatorio'    => 'Relatório Financeiro',
     'usuarios'     => 'Utilizadores',
     'perfil'       => 'Perfil',
-    'configuracoes'=> 'Configurações',
+    'configuracoes' => 'Configurações',
     'notificacoes' => 'Notificações',
 ];
 
@@ -211,14 +212,16 @@ $subtitles = [
     'relatorio'    => 'Visualize e analise as vendas e receitas do restaurante.',
     'usuarios'     => 'Gerir utilizadores: superadmin, manager, staff e kitchen.',
     'perfil'       => 'Visualize e atualize as suas informações pessoais.',
-    'configuracoes'=> 'Gerir preferências gerais da plataforma.',
+    'configuracoes' => 'Gerir preferências gerais da plataforma.',
     'notificacoes' => 'Visualize as suas notificações.',
 ];
 
 // ── Validação de rota ─────────────────────────────────────────────────────────
 $allowed = array_column($menus[$profile] ?? [], 'routa');
+// LINHA 225 — substituir:
 if (!in_array($routa, $allowed, true)) {
-    $routa = 'login';
+    log_error("[rota] rota '{$routa}' não permitida para profile='{$profile}', redirecionando para dashboard");
+    $routa = 'dashboard';
 }
 
 $pageTitle    = $titles[$routa]    ?? 'Dashboard';
@@ -343,8 +346,13 @@ if ($routa === 'dashboard') {
 // ── Dados do relatório financeiro ─────────────────────────────────────────────
 if ($routa === 'relatorio') {
 
-    $periodo = $_GET['periodo'] ?? 'diario';
     $data    = $_GET['data']    ?? date('Y-m-d');
+
+    $periodos_validos = ['diario', 'semanal', 'mensal', 'anual'];
+    $periodo = in_array($_GET['periodo'] ?? '', $periodos_validos, true)
+        ? $_GET['periodo']
+        : 'diario';
+    log_error("[relatorio] inicio: periodo={$periodo} data={$data} user_id=" . ($auth['id'] ?? '?'));
 
     // Valida formato de data
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)) {
@@ -364,7 +372,23 @@ if ($routa === 'relatorio') {
         case 'mensal':
             $where_data    = "YEAR(o.created_at) = YEAR(:data) AND MONTH(o.created_at) = MONTH(:data2)";
             $params_data   = [':data' => $data, ':data2' => $data];
-            $label_periodo = strftime('%B %Y', strtotime($data));   // ex: "Maio 2026"
+            $meses = [
+                'Janeiro',
+                'Fevereiro',
+                'Março',
+                'Abril',
+                'Maio',
+                'Junho',
+                'Julho',
+                'Agosto',
+                'Setembro',
+                'Outubro',
+                'Novembro',
+                'Dezembro'
+            ];
+            $dt = new DateTime($data);
+            $label_periodo = $meses[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y');
+            log_error("[relatorio] label_periodo mensal: {$label_periodo}");
             break;
 
         case 'anual':
@@ -384,48 +408,69 @@ if ($routa === 'relatorio') {
     // KPIs do período
     $sql_kpi = "
         SELECT
-            COUNT(DISTINCT o.id)                                                              AS total_pedidos,
+            COUNT(DISTINCT CASE WHEN o.status != 'cancelled' THEN o.id END) AS total_pedidos,
             COALESCE(SUM(CASE WHEN o.status IN ('served','paid') THEN o.total ELSE 0 END), 0) AS receita_total,
-            COALESCE(SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END), 0)              AS cancelados,
-            COALESCE(SUM(oi.qty), 0)                                                           AS itens_vendidos,
-            COUNT(DISTINCT o.table_id)                                                         AS mesas_ativas
+            COALESCE(SUM(CASE WHEN o.status = 'cancelled'       THEN 1      ELSE 0 END), 0) AS cancelados,
+            COALESCE(SUM(CASE WHEN o.status != 'cancelled'      THEN oi.qty ELSE 0 END), 0) AS itens_vendidos,
+            COUNT(DISTINCT CASE WHEN o.status != 'cancelled' THEN o.table_id END) AS mesas_ativas
         FROM orders o
         LEFT JOIN order_items oi ON oi.order_id = o.id
         WHERE o.restaurant_id = :rid
-          AND o.status != 'cancelled'
-          AND $where_data
+        AND $where_data
     ";
-    $stmt = $pdo->prepare($sql_kpi);
-    $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
-    $kpi = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare($sql_kpi);
+        $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
+        $kpi = $stmt->fetch(PDO::FETCH_ASSOC);
+        log_error("[relatorio] KPI ok: pedidos={$kpi['total_pedidos']} receita={$kpi['receita_total']} cancelados={$kpi['cancelados']}");
+    } catch (Throwable $e) {
+        log_error("[relatorio] ERRO sql_kpi: " . $e->getMessage());
+        $kpi = ['total_pedidos' => 0, 'receita_total' => 0, 'cancelados' => 0, 'itens_vendidos' => 0, 'mesas_ativas' => 0];
+    }
+
 
     $ticket_medio = ($kpi['total_pedidos'] > 0)
         ? round($kpi['receita_total'] / $kpi['total_pedidos'], 2)
         : 0;
 
     // Vendas por prato — usa qty * unit_price (total_price foi removido do schema)
-    $sql_pratos = "
-        SELECT m.name,
-               c.name                          AS categoria,
-               SUM(oi.qty)                     AS qtd_vendida,
-               m.price                         AS preco_unitario,
-               SUM(oi.qty * oi.unit_price)     AS receita_prato
-        FROM order_items oi
-        INNER JOIN orders o      ON o.id  = oi.order_id
-        INNER JOIN menu_items m  ON m.id  = oi.item_id
-        LEFT  JOIN categories c  ON c.id  = m.category_id
-        WHERE o.restaurant_id = :rid
-          AND o.status IN ('served','paid','submitted','preparing')
-          AND $where_data
-        GROUP BY m.id, m.name, c.name, m.price
-        ORDER BY receita_prato DESC
-    ";
-    $stmt = $pdo->prepare($sql_pratos);
-    $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
-    $vendas_pratos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+    try {
+
+        $sql_pratos = "
+            SELECT m.name,
+                c.name                          AS categoria,
+                SUM(oi.qty)                     AS qtd_vendida,
+                m.price                         AS preco_unitario,
+                SUM(oi.qty * oi.unit_price)     AS receita_prato
+            FROM order_items oi
+            INNER JOIN orders o      ON o.id  = oi.order_id
+            INNER JOIN menu_items m  ON m.id  = oi.item_id
+            LEFT  JOIN categories c  ON c.id  = m.category_id
+            WHERE o.restaurant_id = :rid
+            AND o.status IN ('served','paid','submitted','preparing')
+            AND $where_data
+            GROUP BY m.id, m.name, c.name, m.price
+            ORDER BY receita_prato DESC
+        ";
+
+        $stmt = $pdo->prepare($sql_pratos);
+        $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
+        $vendas_pratos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        log_error("[relatorio] vendas_pratos: " . count($vendas_pratos) . " linha(s) para periodo={$periodo}");
+    } catch (Throwable $e) {
+        log_error("[relatorio] ERRO sql_pratos: " . $e->getMessage() . " | SQL: {$sql_pratos}");
+        $vendas_pratos = [];
+    }
+
+
+
+
 
     // Pedidos detalhados
-    $sql_pedidos = "
+    try {
+        $sql_pedidos = "
         SELECT o.id,
                rt.number  AS mesa,
                o.status,
@@ -442,14 +487,23 @@ if ($routa === 'relatorio') {
         GROUP BY o.id, rt.number, o.status, o.total, o.created_at, o.closed_at
         ORDER BY o.created_at DESC
     ";
-    $stmt = $pdo->prepare($sql_pedidos);
-    $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
-    $pedidos_detalhados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+
+
+        $stmt = $pdo->prepare($sql_pedidos);
+        $stmt->execute(array_merge([':rid' => RESTAURANT_ID], $params_data));
+        $pedidos_detalhados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        log_error("[relatorio] pedidos_detalhados: " . count($pedidos_detalhados) . " linha(s)");
+    } catch (Throwable $e) {
+        log_error("[relatorio] ERRO sql_pedidos: " . $e->getMessage() . " | SQL: {$sql_pedidos}");
+        $pedidos_detalhados = [];
+    }
 }
 
 // ── Carrega template de layout ────────────────────────────────────────────────
 $contentTemplate = __DIR__ . '/templates/pages/' . $profile . '/' . $routa . '.php';
 if (!is_file($contentTemplate)) {
+    log_error("[template] ficheiro não encontrado: {$contentTemplate} — fallback para dashboard");
     $contentTemplate = __DIR__ . '/templates/pages/' . $profile . '/dashboard.php';
 }
 
