@@ -500,6 +500,440 @@ if ($routa === 'relatorio') {
     }
 }
 
+ 
+// ── Dados de Utilizadores ─────────────────────────────────────────────────────
+if ($routa === 'usuarios') {
+ 
+    $filtro_role = $_GET['filtro_role'] ?? '';
+    $filtro_q    = trim($_GET['filtro_q'] ?? '');
+ 
+    // ── Acções POST ───────────────────────────────────────────────────────────
+    $post_action = $_POST['action'] ?? '';
+ 
+    if ($post_action === 'criar_usuario') {
+        $name     = trim($_POST['name']     ?? '');
+        $email    = trim($_POST['email']    ?? '');
+        $role     = $_POST['role']          ?? 'staff';
+        $password = $_POST['password']      ?? '';
+        if ($name && $email && $password && in_array($role, ['manager','staff'], true)) {
+            try {
+                $hash = password_hash($password, PASSWORD_BCRYPT);
+                $stmt = $pdo->prepare("
+                    INSERT INTO admin_users (restaurant_id, name, email, password_hash, role)
+                    VALUES (:rid, :name, :email, :hash, :role)
+                ");
+                $stmt->execute([
+                    ':rid'   => RESTAURANT_ID,
+                    ':name'  => $name,
+                    ':email' => $email,
+                    ':hash'  => $hash,
+                    ':role'  => $role,
+                ]);
+                log_error("[usuarios] criado user_id=" . $pdo->lastInsertId() . " email={$email}");
+            } catch (Throwable $e) {
+                log_error("[usuarios] ERRO criar: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=usuarios'); exit;
+    }
+ 
+    if ($post_action === 'editar_usuario') {
+        $uid      = (int)($_POST['usuario_id'] ?? 0);
+        $name     = trim($_POST['name']        ?? '');
+        $email    = trim($_POST['email']       ?? '');
+        $role     = $_POST['role']             ?? 'staff';
+        $password = $_POST['password']         ?? '';
+        if ($uid && $name && $email && in_array($role, ['manager','staff'], true)) {
+            try {
+                if ($password !== '') {
+                    $hash = password_hash($password, PASSWORD_BCRYPT);
+                    $stmt = $pdo->prepare("
+                        UPDATE admin_users SET name=:name, email=:email, role=:role,
+                               password_hash=:hash WHERE id=:id AND restaurant_id=:rid
+                    ");
+                    $stmt->execute([':name'=>$name,':email'=>$email,':role'=>$role,
+                                    ':hash'=>$hash,':id'=>$uid,':rid'=>RESTAURANT_ID]);
+                } else {
+                    $stmt = $pdo->prepare("
+                        UPDATE admin_users SET name=:name, email=:email, role=:role
+                        WHERE id=:id AND restaurant_id=:rid
+                    ");
+                    $stmt->execute([':name'=>$name,':email'=>$email,':role'=>$role,
+                                    ':id'=>$uid,':rid'=>RESTAURANT_ID]);
+                }
+                log_error("[usuarios] editado user_id={$uid}");
+            } catch (Throwable $e) {
+                log_error("[usuarios] ERRO editar: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=usuarios'); exit;
+    }
+ 
+    if ($post_action === 'apagar_usuario') {
+        $uid = (int)($_POST['usuario_id'] ?? 0);
+        if ($uid && $uid !== (int)$auth['id']) {
+            try {
+                $stmt = $pdo->prepare("
+                    DELETE FROM admin_users WHERE id=:id AND restaurant_id=:rid
+                ");
+                $stmt->execute([':id'=>$uid, ':rid'=>RESTAURANT_ID]);
+                log_error("[usuarios] apagado user_id={$uid}");
+            } catch (Throwable $e) {
+                log_error("[usuarios] ERRO apagar: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=usuarios'); exit;
+    }
+ 
+    // ── Queries de leitura ────────────────────────────────────────────────────
+    try {
+        // KPIs
+        $stmt = $pdo->prepare("
+            SELECT
+                COUNT(*)                                                          AS total,
+                SUM(role = 'manager')                                             AS managers,
+                SUM(role = 'staff')                                               AS staff,
+                SUM(YEAR(created_at) = YEAR(NOW()) AND MONTH(created_at) = MONTH(NOW())) AS novos_mes
+            FROM admin_users
+            WHERE restaurant_id = :rid
+        ");
+        $stmt->execute([':rid' => RESTAURANT_ID]);
+        $kpi_usuarios = $stmt->fetch() ?: ['total'=>0,'managers'=>0,'staff'=>0,'novos_mes'=>0];
+        log_error("[usuarios] KPI ok: total={$kpi_usuarios['total']}");
+    } catch (Throwable $e) {
+        log_error("[usuarios] ERRO kpi: " . $e->getMessage());
+        $kpi_usuarios = ['total'=>0,'managers'=>0,'staff'=>0,'novos_mes'=>0];
+    }
+ 
+    try {
+        // Lista filtrada
+        $where_parts = ['restaurant_id = :rid'];
+        $params      = [':rid' => RESTAURANT_ID];
+ 
+        if ($filtro_role !== '') {
+            $where_parts[]     = 'role = :role';
+            $params[':role']   = $filtro_role;
+        }
+        if ($filtro_q !== '') {
+            $where_parts[]   = '(name LIKE :q OR email LIKE :q)';
+            $params[':q']    = '%' . $filtro_q . '%';
+        }
+ 
+        $where_sql = implode(' AND ', $where_parts);
+        $stmt = $pdo->prepare("
+            SELECT id, name, email, role, created_at
+            FROM admin_users
+            WHERE {$where_sql}
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute($params);
+        $lista_usuarios = $stmt->fetchAll();
+        log_error("[usuarios] lista: " . count($lista_usuarios) . " registo(s)");
+    } catch (Throwable $e) {
+        log_error("[usuarios] ERRO lista: " . $e->getMessage());
+        $lista_usuarios = [];
+    }
+}
+ 
+ 
+// ── Dados de Notificações ─────────────────────────────────────────────────────
+if ($routa === 'notificacoes') {
+ 
+    $filtro_tipo   = $_GET['filtro_tipo']  ?? '';
+    $filtro_lida   = $_GET['filtro_lida']  ?? '';
+    $notif_pagina_atual = max(1, (int)($_GET['pagina'] ?? 1));
+    $notif_por_pagina   = 20;
+ 
+    // ── Acções POST ───────────────────────────────────────────────────────────
+    $post_action = $_POST['action'] ?? '';
+ 
+    if ($post_action === 'marcar_lida') {
+        $nid = (int)($_POST['notificacao_id'] ?? 0);
+        if ($nid) {
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE notifications SET lida=1
+                    WHERE id=:id AND (user_id=:uid OR user_id IS NULL) AND restaurant_id=:rid
+                ");
+                $stmt->execute([':id'=>$nid,':uid'=>$auth['id'],':rid'=>RESTAURANT_ID]);
+                log_error("[notificacoes] marcada lida id={$nid}");
+            } catch (Throwable $e) {
+                log_error("[notificacoes] ERRO marcar_lida: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=notificacoes'); exit;
+    }
+ 
+    if ($post_action === 'marcar_todas_lidas') {
+        try {
+            $stmt = $pdo->prepare("
+                UPDATE notifications SET lida=1
+                WHERE (user_id=:uid OR user_id IS NULL) AND restaurant_id=:rid
+            ");
+            $stmt->execute([':uid'=>$auth['id'],':rid'=>RESTAURANT_ID]);
+            log_error("[notificacoes] todas marcadas lidas user_id={$auth['id']}");
+        } catch (Throwable $e) {
+            log_error("[notificacoes] ERRO marcar_todas: " . $e->getMessage());
+        }
+        header('Location: /admin.php?routa=notificacoes'); exit;
+    }
+ 
+    if ($post_action === 'apagar_notificacao') {
+        $nid = (int)($_POST['notificacao_id'] ?? 0);
+        if ($nid) {
+            try {
+                $stmt = $pdo->prepare("
+                    DELETE FROM notifications
+                    WHERE id=:id AND (user_id=:uid OR user_id IS NULL) AND restaurant_id=:rid
+                ");
+                $stmt->execute([':id'=>$nid,':uid'=>$auth['id'],':rid'=>RESTAURANT_ID]);
+                log_error("[notificacoes] apagada id={$nid}");
+            } catch (Throwable $e) {
+                log_error("[notificacoes] ERRO apagar: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=notificacoes'); exit;
+    }
+ 
+    // ── Helper: tempo relativo ────────────────────────────────────────────────
+    if (!function_exists('notif_tempo_relativo')) {
+        function notif_tempo_relativo(string $datetime): string {
+            $diff = time() - strtotime($datetime);
+            if ($diff <    60) return 'Agora mesmo';
+            if ($diff <  3600) return (int)($diff / 60) . ' min atrás';
+            if ($diff < 86400) return (int)($diff / 3600) . ' h atrás';
+            return date('d/m/Y H:i', strtotime($datetime));
+        }
+    }
+ 
+    // ── Queries de leitura ────────────────────────────────────────────────────
+    try {
+        $stmt = $pdo->prepare("
+            SELECT
+                COUNT(*)                       AS total,
+                SUM(lida = 0)                  AS nao_lidas,
+                SUM(tipo = 'pedido')           AS pedidos,
+                SUM(tipo = 'avaliacao')        AS avaliacoes
+            FROM notifications
+            WHERE restaurant_id = :rid
+              AND (user_id = :uid OR user_id IS NULL)
+        ");
+        $stmt->execute([':rid'=>RESTAURANT_ID, ':uid'=>$auth['id']]);
+        $kpi_notif = $stmt->fetch() ?: ['total'=>0,'nao_lidas'=>0,'pedidos'=>0,'avaliacoes'=>0];
+        $notificacoes_nao_lidas = $kpi_notif['nao_lidas'] > 0;
+        log_error("[notificacoes] KPI ok: total={$kpi_notif['total']} nao_lidas={$kpi_notif['nao_lidas']}");
+    } catch (Throwable $e) {
+        log_error("[notificacoes] ERRO kpi: " . $e->getMessage());
+        $kpi_notif = ['total'=>0,'nao_lidas'=>0,'pedidos'=>0,'avaliacoes'=>0];
+        $notificacoes_nao_lidas = false;
+    }
+ 
+    try {
+        $where_parts = [
+            'restaurant_id = :rid',
+            '(user_id = :uid OR user_id IS NULL)',
+        ];
+        $params = [':rid'=>RESTAURANT_ID, ':uid'=>$auth['id']];
+ 
+        if ($filtro_tipo !== '') {
+            $where_parts[]     = 'tipo = :tipo';
+            $params[':tipo']   = $filtro_tipo;
+        }
+        if ($filtro_lida !== '') {
+            $where_parts[]     = 'lida = :lida';
+            $params[':lida']   = (int)$filtro_lida;
+        }
+ 
+        $where_sql = implode(' AND ', $where_parts);
+ 
+        // Total para paginação
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE {$where_sql}");
+        $stmt->execute($params);
+        $notif_total    = (int)$stmt->fetchColumn();
+        $notif_paginas  = max(1, (int)ceil($notif_total / $notif_por_pagina));
+        $notif_offset   = ($notif_pagina_atual - 1) * $notif_por_pagina;
+ 
+        $stmt = $pdo->prepare("
+            SELECT id, tipo, titulo, mensagem, lida, created_at
+            FROM notifications
+            WHERE {$where_sql}
+            ORDER BY lida ASC, created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
+        // LIMIT/OFFSET precisam de bind por tipo
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        $stmt->bindValue(':limit',  $notif_por_pagina, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $notif_offset,     PDO::PARAM_INT);
+        $stmt->execute();
+        $lista_notificacoes = $stmt->fetchAll();
+        log_error("[notificacoes] lista: " . count($lista_notificacoes) . " registo(s) pagina={$notif_pagina_atual}");
+    } catch (Throwable $e) {
+        log_error("[notificacoes] ERRO lista: " . $e->getMessage());
+        $lista_notificacoes = [];
+        $notif_paginas = 1;
+    }
+}
+ 
+ 
+// ── Dados de Configurações ────────────────────────────────────────────────────
+if ($routa === 'configuracoes') {
+ 
+    $config_sucesso = '';
+    $config_erro    = '';
+    $post_action    = $_POST['action'] ?? '';
+ 
+    // ── Acções POST ───────────────────────────────────────────────────────────
+    if ($post_action === 'salvar_restaurante') {
+        $nome     = trim($_POST['cfg_nome']     ?? '');
+        $slug     = trim($_POST['cfg_slug']     ?? '');
+        $timezone = trim($_POST['cfg_timezone'] ?? 'UTC');
+        if ($nome && $slug && preg_match('/^[a-z0-9\-]+$/', $slug)) {
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE restaurants SET name=:name, slug=:slug, timezone=:tz
+                    WHERE id=:rid
+                ");
+                $stmt->execute([':name'=>$nome,':slug'=>$slug,':tz'=>$timezone,':rid'=>RESTAURANT_ID]);
+                $config_sucesso = 'Dados do restaurante actualizados com sucesso.';
+                log_error("[config] restaurante actualizado: nome={$nome} slug={$slug} tz={$timezone}");
+            } catch (Throwable $e) {
+                $config_erro = 'Erro ao guardar: ' . $e->getMessage();
+                log_error("[config] ERRO salvar_restaurante: " . $e->getMessage());
+            }
+        } else {
+            $config_erro = 'Nome e slug são obrigatórios. O slug só pode conter letras, números e hífens.';
+        }
+    }
+ 
+    if ($post_action === 'salvar_sistema') {
+        $senha_atual      = $_POST['senha_atual']      ?? '';
+        $senha_nova       = $_POST['senha_nova']       ?? '';
+        $senha_confirmar  = $_POST['senha_confirmar']  ?? '';
+ 
+        if ($senha_nova !== '') {
+            if ($senha_nova !== $senha_confirmar) {
+                $config_erro = 'As senhas não coincidem.';
+            } elseif (strlen($senha_nova) < 8) {
+                $config_erro = 'A nova senha deve ter no mínimo 8 caracteres.';
+            } else {
+                try {
+                    $row = fetch_one($pdo,
+                        'SELECT password_hash FROM admin_users WHERE id=:id',
+                        [':id' => $auth['id']]
+                    );
+                    if ($row && password_verify($senha_atual, $row['password_hash'])) {
+                        $novo_hash = password_hash($senha_nova, PASSWORD_BCRYPT);
+                        $stmt = $pdo->prepare("UPDATE admin_users SET password_hash=:h WHERE id=:id");
+                        $stmt->execute([':h'=>$novo_hash,':id'=>$auth['id']]);
+                        $config_sucesso = 'Senha actualizada com sucesso.';
+                        log_error("[config] senha alterada user_id={$auth['id']}");
+                    } else {
+                        $config_erro = 'Senha actual incorrecta.';
+                        log_error("[config] senha actual errada user_id={$auth['id']}");
+                    }
+                } catch (Throwable $e) {
+                    $config_erro = 'Erro ao alterar senha.';
+                    log_error("[config] ERRO salvar_sistema: " . $e->getMessage());
+                }
+            }
+        }
+        // Preferências (expandir conforme necessário)
+        log_error("[config] preferencias guardadas user_id={$auth['id']}");
+    }
+ 
+    if ($post_action === 'criar_mesa' || $post_action === 'editar_mesa') {
+        $mid    = (int)($_POST['mesa_id']    ?? 0);
+        $number = trim($_POST['number']      ?? '');
+        $desc   = trim($_POST['description'] ?? '');
+        $active = isset($_POST['active']) ? 1 : 0;
+        if ($number) {
+            try {
+                if ($post_action === 'criar_mesa') {
+                    $qr   = 'QR-' . strtoupper(bin2hex(random_bytes(8)));
+                    $stmt = $pdo->prepare("
+                        INSERT INTO restaurant_tables (restaurant_id, number, description, qr_code, active)
+                        VALUES (:rid, :num, :desc, :qr, :active)
+                    ");
+                    $stmt->execute([':rid'=>RESTAURANT_ID,':num'=>$number,':desc'=>$desc,
+                                    ':qr'=>$qr,':active'=>$active]);
+                    log_error("[config] mesa criada number={$number}");
+                } else {
+                    $stmt = $pdo->prepare("
+                        UPDATE restaurant_tables
+                        SET number=:num, description=:desc, active=:active
+                        WHERE id=:id AND restaurant_id=:rid
+                    ");
+                    $stmt->execute([':num'=>$number,':desc'=>$desc,':active'=>$active,
+                                    ':id'=>$mid,':rid'=>RESTAURANT_ID]);
+                    log_error("[config] mesa editada id={$mid}");
+                }
+            } catch (Throwable $e) {
+                log_error("[config] ERRO mesa: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=configuracoes'); exit;
+    }
+ 
+    if ($post_action === 'apagar_mesa') {
+        $mid = (int)($_POST['mesa_id'] ?? 0);
+        if ($mid) {
+            try {
+                $stmt = $pdo->prepare("
+                    DELETE FROM restaurant_tables WHERE id=:id AND restaurant_id=:rid
+                ");
+                $stmt->execute([':id'=>$mid, ':rid'=>RESTAURANT_ID]);
+                log_error("[config] mesa apagada id={$mid}");
+            } catch (Throwable $e) {
+                log_error("[config] ERRO apagar_mesa: " . $e->getMessage());
+            }
+        }
+        header('Location: /admin.php?routa=configuracoes'); exit;
+    }
+ 
+    if ($post_action === 'limpar_pedidos') {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM orders WHERE restaurant_id=:rid");
+            $stmt->execute([':rid'=>RESTAURANT_ID]);
+            $config_sucesso = 'Histórico de pedidos eliminado.';
+            log_error("[config] LIMPAR PEDIDOS executado por user_id={$auth['id']}");
+        } catch (Throwable $e) {
+            $config_erro = 'Erro ao limpar pedidos.';
+            log_error("[config] ERRO limpar_pedidos: " . $e->getMessage());
+        }
+    }
+ 
+    // ── Queries de leitura ────────────────────────────────────────────────────
+    try {
+        $config = fetch_one($pdo,
+            'SELECT name, slug, timezone FROM restaurants WHERE id=:rid',
+            [':rid' => RESTAURANT_ID]
+        ) ?: ['name'=>'','slug'=>'','timezone'=>'UTC'];
+        // Preferências em JSON (opcional — expandir se tiver tabela settings)
+        $config['notif_novos_pedidos'] = true;
+        $config['notif_avaliacoes']    = true;
+        log_error("[config] dados restaurante carregados");
+    } catch (Throwable $e) {
+        log_error("[config] ERRO ler restaurante: " . $e->getMessage());
+        $config = ['name'=>'','slug'=>'','timezone'=>'UTC',
+                   'notif_novos_pedidos'=>true,'notif_avaliacoes'=>true];
+    }
+ 
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, number, description, qr_code, active, created_at
+            FROM restaurant_tables
+            WHERE restaurant_id=:rid
+            ORDER BY CAST(number AS UNSIGNED), number
+        ");
+        $stmt->execute([':rid'=>RESTAURANT_ID]);
+        $lista_mesas = $stmt->fetchAll();
+        log_error("[config] mesas: " . count($lista_mesas) . " registo(s)");
+    } catch (Throwable $e) {
+        log_error("[config] ERRO ler mesas: " . $e->getMessage());
+        $lista_mesas = [];
+    }
+}
+
 // ── Carrega template de layout ────────────────────────────────────────────────
 $contentTemplate = __DIR__ . '/templates/pages/' . $profile . '/' . $routa . '.php';
 if (!is_file($contentTemplate)) {
