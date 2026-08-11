@@ -32,6 +32,7 @@
 
                     </nav>
                     <form method="post" action="/admin.php" class="logout">
+                    <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                         <input type="hidden" name="action" value="logout">
                         <button type="submit" class="menu-logout">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i></i> <span>Sair</span>
@@ -58,7 +59,7 @@
                                 <div class="notificacoes">
                                     <i class="fa-solid fa-bell"></i>
                                 </div>
-                            </a> 
+                            </a>
                             <div class="hamburguer">
                                 <i class="fa-solid fa-bars"></i>
                             </div>

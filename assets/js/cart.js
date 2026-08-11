@@ -110,15 +110,37 @@
         if (timeout > 0) setTimeout(() => { if (el && el.parentNode) el.parentNode.removeChild(el); }, timeout);
     }
     if (checkoutBtn) {
-        checkoutBtn.addEventListener('click', function () {
+        checkoutBtn.addEventListener('click', async function () {
             const cart = getCart();
             if (!cart || cart.length === 0) { showMessage('Carrinho vazio'); return; }
+
+            // O pedido só pode ser finalizado com uma sessão de mesa válida
+            // (o cliente chegou via QR code da mesa, ou indicou o código da
+            // mesa manualmente). window.CardapioSession vem de app.js.
+            if (!window.CardapioSession) {
+                showMessage('Não foi possível verificar a mesa. Recarregue a página.', 4000);
+                return;
+            }
+
             checkoutBtn.disabled = true; checkoutBtn.classList.add('cart-checkout-disabled');
-            // POST to /checkout with cart data
-            fetch('/public/api/index.php/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart: cart, tableNumber: '1', restaurantSlug: 'minha-lanchonete' }) })
+
+            let sessionToken;
+            try {
+                sessionToken = await window.CardapioSession.ensureTableSession();
+            } catch (e) {
+                sessionToken = null;
+            }
+
+            if (!sessionToken) {
+                showMessage('É necessário indicar o código da mesa para finalizar o pedido.', 4000);
+                checkoutBtn.disabled = false; checkoutBtn.classList.remove('cart-checkout-disabled');
+                return;
+            }
+
+            fetch('/public/api/index.php/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cart: cart, session_token: sessionToken }) })
                 .then(res => {
                     if (res.ok) return res.json();
-                    return res.json().then(err => { throw new Error(err.error || 'Erro no servidor'); });
+                    return res.json().then(err => { throw err; });
                 })
                 .then(data => {
                     showMessage('Compra finalizada com sucesso! Pedido #' + data.order_id, 2500);
@@ -126,7 +148,16 @@
                 })
                 .catch(err => {
                     console.error('Checkout error:', err);
-                    showMessage('Erro ao finalizar compra: ' + err.message, 3000);
+                    const code = err && err.error;
+                    if (code === 'session_expired' || code === 'session_invalid' || code === 'session_required') {
+                        // A sessão local achava-se válida mas o servidor recusou
+                        // (ex: passou dos 35 min entre a última acção e o clique
+                        // em finalizar). Limpa e pede o código da mesa outra vez.
+                        window.CardapioSession.clearSession();
+                        showMessage('A sessão da mesa expirou. Por favor, indique o código da mesa novamente e finalize de novo.', 5000);
+                    } else {
+                        showMessage('Erro ao finalizar compra: ' + ((err && err.message) || (err && err.error) || 'erro desconhecido'), 3000);
+                    }
                 })
                 .finally(() => { checkoutBtn.disabled = false; checkoutBtn.classList.remove('cart-checkout-disabled'); });
         }

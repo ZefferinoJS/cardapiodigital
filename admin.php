@@ -81,6 +81,42 @@ function status_badge(string $status, array $labels, array $colors): string
     return "<span class=\"status-badge\" style=\"background:{$color}20;color:{$color};border:1px solid {$color}40\">{$label}</span>";
 }
 
+/**
+ * Gera (uma vez por sessão) e devolve o token CSRF actual.
+ */
+function csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Valida o token CSRF enviado num POST contra o guardado na sessão.
+ * Termina o pedido com 403 se não bater certo.
+ */
+function csrf_check(): void
+{
+    $sent = (string) ($_POST['csrf_token'] ?? '');
+    $real = (string) ($_SESSION['csrf_token'] ?? '');
+
+    if ($real === '' || $sent === '' || !hash_equals($real, $sent)) {
+        log_error('CSRF inválido em ' . ($_SERVER['REQUEST_URI'] ?? '?'));
+        http_response_code(403);
+        exit('Pedido inválido ou expirado (CSRF). Recarregue a página e tente novamente.');
+    }
+}
+
+// Garante que existe sempre um token CSRF disponível para os templates,
+// e valida-o em qualquer POST que traga uma "action" (todas as acções que
+// alteram dados no painel passam por aqui: login, logout, criar/editar/
+// apagar utilizador, notificações, configurações...).
+$csrfToken = csrf_token();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    csrf_check();
+}
+
 // ── Acções POST ───────────────────────────────────────────────────────────────
 if (($_POST['action'] ?? null) === 'logout') {
     session_destroy();
@@ -89,6 +125,9 @@ if (($_POST['action'] ?? null) === 'logout') {
 }
 
 if (($_POST['action'] ?? null) === 'login') {
+    $maxLoginAttempts = 5;
+    $lockoutMinutes    = 15;
+
     $email    = trim((string) ($_POST['email']    ?? ''));
     $password = trim((string) ($_POST['password'] ?? ''));
 
@@ -101,7 +140,8 @@ if (($_POST['action'] ?? null) === 'login') {
         // Usa admin_users (schema actual) em vez da tabela usuarios
         $user = fetch_one(
             $pdo,
-            'SELECT id, name, email, password_hash, role, restaurant_id
+            'SELECT id, name, email, password_hash, role, restaurant_id,
+                    failed_login_attempts, locked_until
              FROM admin_users
              WHERE email = :email
              LIMIT 1',
@@ -119,7 +159,18 @@ if (($_POST['action'] ?? null) === 'login') {
         redirecionarPara('login');
     }
 
-    // Verifica hash bcrypt/argon2 ou comparação directa (legado)
+    // Conta temporariamente bloqueada por demasiadas tentativas falhadas?
+    $lockedUntil = $user['locked_until'] ?? null;
+    if ($lockedUntil !== null && strtotime((string) $lockedUntil) > time()) {
+        $minutosRestantes = (int) ceil((strtotime((string) $lockedUntil) - time()) / 60);
+        log_error('login blocked (locked_until): user_id=' . $user['id']);
+        $_SESSION['login_error'] = "Conta temporariamente bloqueada por demasiadas tentativas falhadas. Tente novamente em {$minutosRestantes} min.";
+        redirecionarPara('login');
+    }
+
+    // Só aceita hashes bcrypt/argon2 (password_hash()/password_verify()).
+    // O fallback de comparação em texto simples foi removido: guardar ou
+    // comparar senhas em claro nunca é seguro, mesmo como "legado".
     $stored = trim((string) ($user['password_hash'] ?? ''));
     $ok     = false;
     if ($stored !== '' && (
@@ -128,13 +179,20 @@ if (($_POST['action'] ?? null) === 'login') {
         str_starts_with($stored, '$argon')
     )) {
         $ok = password_verify($password, $stored);
-    } else {
-        $ok = hash_equals($stored, $password);
     }
 
     $profile = app_profile_from_db((string) ($user['role'] ?? ''));
 
     if ($ok && $profile !== null) {
+        // Login bem-sucedido: repõe o contador de tentativas falhadas.
+        try {
+            $pdo->prepare(
+                'UPDATE admin_users SET failed_login_attempts = 0, locked_until = NULL WHERE id = :id'
+            )->execute(['id' => $user['id']]);
+        } catch (Throwable $e) {
+            log_error('failed to reset login attempts: ' . $e->getMessage());
+        }
+
         session_regenerate_id(true);
         $_SESSION['auth'] = [
             'id'            => (int)    $user['id'],
@@ -147,6 +205,27 @@ if (($_POST['action'] ?? null) === 'login') {
         // Nota: admin_users não tem último_login; adicione a coluna se necessário.
         log_error('login success: user_id=' . $user['id'] . ' profile=' . $profile . ' session=' . session_id());
         redirecionarPara('dashboard');
+    }
+
+    // Credenciais erradas: incrementa o contador e bloqueia a conta
+    // temporariamente se atingir o limite de tentativas.
+    try {
+        $attempts = (int) ($user['failed_login_attempts'] ?? 0) + 1;
+        if ($attempts >= $maxLoginAttempts) {
+            $pdo->prepare(
+                'UPDATE admin_users
+                 SET failed_login_attempts = 0,
+                     locked_until = DATE_ADD(NOW(), INTERVAL :minutos MINUTE)
+                 WHERE id = :id'
+            )->execute(['minutos' => $lockoutMinutes, 'id' => $user['id']]);
+            log_error('account locked after ' . $attempts . ' failed attempts: user_id=' . $user['id']);
+        } else {
+            $pdo->prepare(
+                'UPDATE admin_users SET failed_login_attempts = :n WHERE id = :id'
+            )->execute(['n' => $attempts, 'id' => $user['id']]);
+        }
+    } catch (Throwable $e) {
+        log_error('failed to update login attempts: ' . $e->getMessage());
     }
 
     log_error('login failed: bad credentials for ' . $email);

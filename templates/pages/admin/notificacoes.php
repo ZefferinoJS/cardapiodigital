@@ -8,6 +8,7 @@
         <?php if (!empty($notificacoes_nao_lidas)): ?>
         <div class="dh-right">
             <form method="POST" action="/admin.php">
+                <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                 <input type="hidden" name="routa"  value="notificacoes">
                 <input type="hidden" name="action" value="marcar_todas_lidas">
                 <button type="submit" class="btn-secondary">
@@ -148,6 +149,7 @@
                 <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
                     <?php if (!$lida): ?>
                     <form method="POST" action="/admin.php">
+                        <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                         <input type="hidden" name="routa"         value="notificacoes">
                         <input type="hidden" name="action"        value="marcar_lida">
                         <input type="hidden" name="notificacao_id" value="<?= (int)$n['id']; ?>">
@@ -158,6 +160,7 @@
                     </form>
                     <?php endif; ?>
                     <form method="POST" action="/admin.php">
+                        <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                         <input type="hidden" name="routa"         value="notificacoes">
                         <input type="hidden" name="action"        value="apagar_notificacao">
                         <input type="hidden" name="notificacao_id" value="<?= (int)$n['id']; ?>">

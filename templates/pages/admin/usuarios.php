@@ -176,6 +176,7 @@
         </div>
         <div class="modal-body">
             <form method="POST" action="/admin.php" id="form-usuario">
+            <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                 <input type="hidden" name="routa"  value="usuarios">
                 <input type="hidden" name="action" value="salvar_usuario" id="usuario-action">
                 <input type="hidden" name="usuario_id" id="usuario-id" value="">
@@ -228,6 +229,7 @@
             <p>Tem a certeza que deseja remover o utilizador <strong id="apagar-nome"></strong>?
                Esta acção não pode ser desfeita.</p>
             <form method="POST" action="/admin.php" style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                 <input type="hidden" name="routa"      value="usuarios">
                 <input type="hidden" name="action"     value="apagar_usuario">
                 <input type="hidden" name="usuario_id" id="apagar-id" value="">

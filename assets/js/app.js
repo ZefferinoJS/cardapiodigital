@@ -3,6 +3,12 @@
   const API_BASE = '/public/api';
   const restaurantSlug = document.body.dataset.restaurant || null;
 
+  // Tem de bater certo com TABLE_SESSION_TIMEOUT_MINUTES em public/api/index.php.
+  // Depois deste tempo sem o cliente estar activo no site, a mesa é
+  // considerada "desocupada" e o código da mesa volta a ser pedido.
+  const SESSION_TIMEOUT_MINUTES = 35;
+  const HEARTBEAT_INTERVAL_MS = 60 * 1000; // 1 minuto
+
   function qs(sel){ return document.querySelector(sel); }
   function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
 
@@ -65,10 +71,66 @@
 
   function saveSession(token){
     localStorage.setItem('session_token', token);
+    touchSession();
   }
+
+  // Regista "agora" como o último momento em que o cliente esteve
+  // activo no site com esta sessão de mesa.
+  function touchSession(){
+    localStorage.setItem('session_last_active', String(Date.now()));
+  }
+
+  function clearSession(){
+    localStorage.removeItem('session_token');
+    localStorage.removeItem('session_last_active');
+  }
+
+  // Devolve o session_token guardado, ou null se não existir ou se já
+  // passaram SESSION_TIMEOUT_MINUTES desde a última actividade registada
+  // localmente (o servidor faz sempre a validação definitiva à parte —
+  // isto é só para não tentarmos usar um token que sabemos à partida que
+  // vai ser recusado, e para podermos pedir o código da mesa outra vez
+  // de forma proactiva).
   function getSession(){
-    return localStorage.getItem('session_token');
+    const token = localStorage.getItem('session_token');
+    if(!token) return null;
+
+    const lastActive = Number(localStorage.getItem('session_last_active') || 0);
+    const minutesInactive = (Date.now() - lastActive) / 60000;
+    if(!lastActive || minutesInactive > SESSION_TIMEOUT_MINUTES){
+      clearSession();
+      return null;
+    }
+    return token;
   }
+
+  // Envia um "sinal de vida" ao servidor para manter a sessão de mesa
+  // activa enquanto o cliente estiver mesmo a navegar no site. Só corre
+  // enquanto a aba estiver visível — se o cliente sair/minimizar por 35
+  // minutos ou mais, deixamos de renovar e a sessão expira nos dois lados.
+  let heartbeatTimer = null;
+  async function sendHeartbeat(){
+    const token = getSession();
+    if(!token) return;
+    try{
+      await apiPost('visits/heartbeat', { session_token: token });
+      touchSession();
+    }catch(err){
+      // Sessão inválida/expirada no servidor: limpa localmente também.
+      if(err && err.status === 401 || err && err.status === 404){
+        clearSession();
+      }
+    }
+  }
+  function startHeartbeat(){
+    if(heartbeatTimer) return;
+    heartbeatTimer = setInterval(()=>{
+      if(document.visibilityState === 'visible') sendHeartbeat();
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible') sendHeartbeat();
+  });
 
   // simple overlay prompt for table number
   function showTablePrompt(){
@@ -346,10 +408,12 @@
   // boot sequence
   async function init(){
     try{
+      // getSession() já limpa e devolve null se a sessão guardada tiver
+      // mais de SESSION_TIMEOUT_MINUTES de inactividade.
       const existing = getSession();
       const qr = getQueryParam('qr') || getQueryParam('token');
       if(existing){
-        // already have session
+        startHeartbeat();
         await loadMenu();
         return;
       }
@@ -357,6 +421,7 @@
         try{
           const res = await apiPost('visits', { qr_token: qr });
           saveSession(res.session_token);
+          startHeartbeat();
           await loadMenu();
           return;
         }catch(err){
@@ -366,13 +431,29 @@
       // no session and no qr -> ask for table
       const visit = await showTablePrompt();
       if(visit){
-        await loadMenu();
-      } else {
-        // user cancelled — still attempt to load menu read-only
-        await loadMenu();
+        startHeartbeat();
       }
+      // Mesmo que o cliente cancele, deixamos ver o menu (só o checkout
+      // fica bloqueado sem sessão — ver ensureTableSession() em cart.js).
+      await loadMenu();
     }catch(e){ console.error(e); }
   }
+
+  // Usado pelo cart.js antes de finalizar um pedido: garante que existe
+  // uma sessão de mesa válida, pedindo o código da mesa se for preciso.
+  // Devolve o session_token, ou null se o cliente cancelar o prompt.
+  async function ensureTableSession(){
+    const existing = getSession();
+    if(existing) return existing;
+
+    const visit = await showTablePrompt();
+    if(!visit) return null;
+
+    startHeartbeat();
+    return visit.session_token;
+  }
+
+  window.CardapioSession = { ensureTableSession, getSession, clearSession };
 
   // run
   document.addEventListener('DOMContentLoaded', init);

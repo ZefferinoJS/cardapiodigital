@@ -1,10 +1,12 @@
 <?php
 // Simple API front controller for cardapio digital
 // Routes:
-// POST /public/api/index.php/visits        -> create visit (qr_token)
-// GET  /public/api/index.php/menu         -> list menu by restaurant (query: slug or restaurant_id)
-// POST /public/api/index.php/orders       -> create order
-// POST /public/api/index.php/ratings      -> submit rating
+// POST /public/api/index.php/visits            -> create visit (qr_token)
+// POST /public/api/index.php/visits/heartbeat  -> refresh last_seen_at da sessão de mesa
+// GET  /public/api/index.php/menu              -> list menu by restaurant (query: slug or restaurant_id)
+// POST /public/api/index.php/orders            -> create order
+// POST /public/api/index.php/checkout          -> create order a partir do carrinho
+// POST /public/api/index.php/ratings           -> submit rating
 
 $config = require_once __DIR__ .'/../../config/db.php';
 try{
@@ -32,8 +34,64 @@ $resource = $parts[0] ?? '';
 // helper
 function json($data,$code=200){ http_response_code($code); echo json_encode($data); exit; }
 
+// Minutos de inactividade após os quais a sessão de mesa (visit) expira e o
+// cliente tem de voltar a indicar o código/QR da mesa. Aplica-se tanto no
+// checkout como na criação directa de pedidos.
+const TABLE_SESSION_TIMEOUT_MINUTES = 35;
+
+/**
+ * Vai buscar a "visit" (sessão de mesa) associada a um session_token e
+ * confirma que ainda está dentro da janela de inactividade permitida.
+ * Devolve a visita (array) se válida, ou termina o pedido com json(erro).
+ */
+function require_valid_table_session(PDO $pdo, ?string $sessionToken): array
+{
+    if (!$sessionToken) {
+        json(['error' => 'session_required', 'message' => 'É necessário indicar o código da mesa (QR ou manual) antes de finalizar o pedido.'], 400);
+    }
+
+    $stmt = $pdo->prepare('SELECT id, restaurant_id, table_id, session_token, last_seen_at, created_at FROM visits WHERE session_token = ? LIMIT 1');
+    $stmt->execute([$sessionToken]);
+    $visit = $stmt->fetch();
+
+    if (!$visit) {
+        json(['error' => 'session_invalid', 'message' => 'Sessão de mesa não encontrada. Por favor, indique o código da mesa novamente.'], 404);
+    }
+
+    $lastSeen = $visit['last_seen_at'] ?? $visit['created_at'];
+    $minutesInactive = (time() - strtotime((string) $lastSeen)) / 60;
+
+    if ($minutesInactive > TABLE_SESSION_TIMEOUT_MINUTES) {
+        json(['error' => 'session_expired', 'message' => 'A sessão desta mesa expirou por inactividade. Por favor, indique o código da mesa novamente.'], 401);
+    }
+
+    return $visit;
+}
+
 // POST /visits { qr_token } OR { table_number, restaurant_slug }
-if($method === 'POST' && $resource === 'visits'){
+// POST /visits/heartbeat { session_token } — refresca last_seen_at para a
+// sessão continuar válida enquanto o cliente estiver activo no site.
+if($method === 'POST' && $resource === 'visits' && ($parts[1] ?? '') === 'heartbeat'){
+    $body = json_decode(file_get_contents('php://input'), true) ?: [];
+    $session = $body['session_token'] ?? null;
+    if(!$session) return json(['error'=>'session_token required'],400);
+
+    $stmt = $pdo->prepare('SELECT id, last_seen_at, created_at FROM visits WHERE session_token = ? LIMIT 1');
+    $stmt->execute([$session]);
+    $visit = $stmt->fetch();
+    if(!$visit) return json(['error'=>'session_invalid'],404);
+
+    $lastSeen = $visit['last_seen_at'] ?? $visit['created_at'];
+    $minutesInactive = (time() - strtotime((string) $lastSeen)) / 60;
+    if ($minutesInactive > TABLE_SESSION_TIMEOUT_MINUTES) {
+        return json(['error'=>'session_expired','message'=>'A sessão desta mesa expirou por inactividade.'],401);
+    }
+
+    $pdo->prepare('UPDATE visits SET last_seen_at = NOW() WHERE id = ?')->execute([$visit['id']]);
+    json(['ok'=>true]);
+}
+
+if($method === 'POST' && $resource === 'visits' && !isset($parts[1])){
     $body = json_decode(file_get_contents('php://input'), true) ?: [];
     $qr = $body['qr_token'] ?? null;
     $table_number = $body['table_number'] ?? null;
@@ -106,6 +164,21 @@ if($method === 'GET' && $resource === 'menu'){
     $itemsStmt->execute([$restaurant_id]);
     $items = $itemsStmt->fetchAll();
 
+    // Ingredientes de todos os pratos deste restaurante, agrupados por
+    // item_id, numa única query (evita N+1 SELECTs dentro do foreach).
+    // Sem isto, o modal do prato na página do cliente nunca tinha
+    // ingredientes para mostrar — a API simplesmente não os enviava.
+    $ingredientsByItem = [];
+    if ($items) {
+        $itemIds = array_column($items, 'id');
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $ingStmt = $pdo->prepare("SELECT item_id, name FROM ingredients WHERE item_id IN ($placeholders) ORDER BY id");
+        $ingStmt->execute($itemIds);
+        foreach ($ingStmt->fetchAll() as $row) {
+            $ingredientsByItem[(int) $row['item_id']][] = $row['name'];
+        }
+    }
+
     // organize
     $byCat = [];
     foreach($categories as $c){ $byCat[$c['id']] = $c; $byCat[$c['id']]['items'] = []; }
@@ -116,7 +189,8 @@ if($method === 'GET' && $resource === 'menu'){
             $aggregate = ['avg'=> (float)$it['avg_rating'], 'total'=>(int)$it['total_count'], 'counts'=> json_decode($it['counts'], true) ?: new stdClass()];
         }
         $payload = [
-            'id'=>(int)$it['id'], 'name'=>$it['name'], 'slug'=>$it['slug'], 'description'=>$it['description'], 'price'=>(float)$it['price'], 'image'=>$it['image'], 'cook_time'=> $it['cook_time_minutes'], 'rating'=>$aggregate
+            'id'=>(int)$it['id'], 'name'=>$it['name'], 'slug'=>$it['slug'], 'description'=>$it['description'], 'price'=>(float)$it['price'], 'image'=>$it['image'], 'cook_time'=> $it['cook_time_minutes'], 'rating'=>$aggregate,
+            'ingredients'=> $ingredientsByItem[(int) $it['id']] ?? []
         ];
         if($cat && isset($byCat[$cat])) $byCat[$cat]['items'][] = $payload;
         else { // uncategorized
@@ -134,12 +208,11 @@ if($method === 'POST' && $resource === 'orders'){
     $session = $body['session_token'] ?? null;
     $items = $body['items'] ?? [];
     $notes = $body['notes'] ?? null;
-    if(!$session || !$items) return json(['error'=>'session_token and items required'],400);
+    if(!$items) return json(['error'=>'session_token and items required'],400);
 
-    // find visit to get restaurant/table
-    $stmt = $pdo->prepare('SELECT restaurant_id, table_id FROM visits WHERE session_token = ? LIMIT 1');
-    $stmt->execute([$session]); $visit = $stmt->fetch();
-    if(!$visit) return json(['error'=>'invalid_session'],404);
+    // Sessão de mesa tem de existir e não pode estar inactiva há mais de
+    // TABLE_SESSION_TIMEOUT_MINUTES (ver require_valid_table_session()).
+    $visit = require_valid_table_session($pdo, $session);
 
     // compute total and create order
     $pdo->beginTransaction();
@@ -843,28 +916,23 @@ if($method === 'DELETE' && $resource === 'admin' && ($parts[1] ?? '') === 'ratin
 if($method === 'POST' && $resource === 'checkout'){
     $body = json_decode(file_get_contents('php://input'), true) ?: [];
     $cart = $body['cart'] ?? [];
-    $tableNumber = $body['tableNumber'] ?? '1'; // default table
-    $restaurantSlug = $body['restaurantSlug'] ?? 'minha-lanchonete'; // default restaurant
-    
+
     if(empty($cart)) return json(['error'=>'cart_empty'],400);
 
+    // O pedido só pode ser finalizado se o cliente tiver uma sessão de mesa
+    // válida (criada via QR code da mesa ou por introdução manual do código
+    // da mesa em /visits) e essa sessão não pode estar inactiva há mais de
+    // TABLE_SESSION_TIMEOUT_MINUTES. O restaurante e a mesa vêm SEMPRE da
+    // sessão validada no servidor — nunca do que o cliente enviar no corpo
+    // do pedido, para não ser possível finalizar um pedido "para a mesa 1"
+    // só porque é o valor por omissão.
+    $sessionToken = $body['session_token'] ?? null;
+    $visit = require_valid_table_session($pdo, $sessionToken);
+    $restaurant_id = (int) $visit['restaurant_id'];
+    $table_id      = $visit['table_id'] !== null ? (int) $visit['table_id'] : null;
+    $session_token = $visit['session_token'];
+
     try {
-        // Get restaurant ID from slug
-        $restStmt = $pdo->prepare('SELECT id FROM restaurants WHERE slug = ? LIMIT 1');
-        $restStmt->execute([$restaurantSlug]);
-        $rest = $restStmt->fetch();
-        if(!$rest) return json(['error'=>'restaurant_not_found'],404);
-        $restaurant_id = $rest['id'];
-
-        // Get table ID
-        $tableStmt = $pdo->prepare('SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND number = ? LIMIT 1');
-        $tableStmt->execute([$restaurant_id, $tableNumber]);
-        $table = $tableStmt->fetch();
-        $table_id = $table ? $table['id'] : null;
-
-        // Create session token
-        $session_token = bin2hex(random_bytes(16));
-
         // Begin transaction
         $pdo->beginTransaction();
 

@@ -37,6 +37,7 @@
                 <form id="login-form" action="/admin.php" method="post">
                     <div class="form-group">
                         <input type="hidden" name="action" value="login">
+                        <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" placeholder="admin@ocardapio.ao" autocomplete="email" required>
                     </div>

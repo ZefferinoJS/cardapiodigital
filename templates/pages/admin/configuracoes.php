@@ -42,6 +42,7 @@
     <!-- ── Painel: Restaurante ── -->
     <div class="section-panel active" id="panel-restaurante">
         <form method="POST" action="/admin.php" style="max-width:600px;">
+        <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
             <input type="hidden" name="routa"  value="configuracoes">
             <input type="hidden" name="action" value="salvar_restaurante">
 
@@ -181,6 +182,7 @@
     <!-- ── Painel: Sistema ── -->
     <div class="section-panel" id="panel-sistema">
         <form method="POST" action="/admin.php" style="max-width:600px;">
+        <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
             <input type="hidden" name="routa"  value="configuracoes">
             <input type="hidden" name="action" value="salvar_sistema">
 
@@ -267,6 +269,7 @@
         </div>
         <div class="modal-body">
             <form method="POST" action="/admin.php">
+            <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                 <input type="hidden" name="routa"   value="configuracoes">
                 <input type="hidden" name="action"  value="salvar_mesa" id="mesa-action">
                 <input type="hidden" name="mesa_id" id="mesa-id" value="">
@@ -309,6 +312,7 @@
             <p>Tem a certeza que deseja remover a <strong id="apagar-mesa-nome"></strong>?</p>
             <form method="POST" action="/admin.php"
                   style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+                  <input type="hidden" name="csrf_token" value="<?= $escape($csrfToken) ?>">
                 <input type="hidden" name="routa"   value="configuracoes">
                 <input type="hidden" name="action"  value="apagar_mesa">
                 <input type="hidden" name="mesa_id" id="apagar-mesa-id" value="">

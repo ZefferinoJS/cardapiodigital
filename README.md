@@ -52,6 +52,9 @@ nenhum `require` ou URL.
 ## Configuração
 
 1. Importe `database/cardapio.sql` na sua base de dados MySQL/MariaDB.
+   Se já tinha uma base de dados criada a partir de uma versão anterior deste
+   projeto, corra também as migrações em `database/migrations/`, por ordem
+   (`001_...`, depois `002_...`).
 2. Copie `.env.example` para `.env` (ou defina as variáveis `DB_HOST`,
    `DB_NAME`, `DB_USER`, `DB_PASS` diretamente no seu servidor web/painel de
    hospedagem) e preencha com as credenciais reais.
@@ -121,11 +124,62 @@ nenhum `require` ou URL.
     mínimo (sem depender de `composer`, que não tem acesso à internet neste
     ambiente) que lê o `.env` e preenche `getenv()`/`$_ENV` — variáveis já
     definidas no servidor real continuam a ter prioridade sobre o `.env`.
+11. **Proteção CSRF em todos os formulários POST do admin.** Adicionei
+    `csrf_token()`/`csrf_check()` em `admin.php` — qualquer POST com
+    `action` (login, logout, criar/editar/apagar utilizador, notificações,
+    configurações, mesas) exige agora um token válido gerado na própria
+    sessão. Os 13 formulários (`layout_portal.php`, `login.php`,
+    `notificacoes.php` × 2 perfis, `configuracoes.php`, `usuarios.php`)
+    passaram a incluir o campo oculto `csrf_token`.
+12. **Bloqueio de conta após tentativas falhadas de login.** `admin_users`
+    ganhou as colunas `failed_login_attempts` e `locked_until` (ver
+    `database/migrations/001_add_login_lockout.sql` se já tinha a BD
+    importada). Ao fim de 5 tentativas erradas seguidas, a conta fica
+    bloqueada 15 minutos — mesmo com a senha certa, o login é recusado
+    enquanto o bloqueio estiver activo.
+13. **Removido o fallback de senha em texto simples.** O login só aceita
+    hashes bcrypt/argon2 (`password_verify()`). Confirmei que o utilizador
+    já existente no dump usa bcrypt, por isso ninguém fica bloqueado por
+    esta mudança — mas qualquer conta futura sem hash válido simplesmente
+    não consegue entrar (em vez de cair numa comparação insegura).
+14. **[NOVO] Pedido só pode ser finalizado com sessão de mesa válida.**
+    Antes, `cart.js` enviava sempre `tableNumber: '1'` fixo no checkout —
+    ou seja, qualquer pedido ia sempre para a mesa 1, e não havia nenhuma
+    verificação de que o cliente tinha mesmo passado pelo QR code ou
+    indicado o código da mesa. Agora:
+    - `public/api/index.php` tem `require_valid_table_session()`, chamada
+      em `/checkout` e `/orders`: exige um `session_token` válido (criado em
+      `/visits`, via QR ou código manual da mesa) e o restaurante/mesa vêm
+      sempre dessa sessão — nunca do que o cliente enviar no corpo do
+      pedido.
+    - `cart.js` chama `window.CardapioSession.ensureTableSession()` (de
+      `app.js`) antes de finalizar; se não houver sessão válida, pede o
+      código da mesa antes de continuar, e só then envia o `session_token`
+      real no checkout.
+15. **[NOVO] Sessão de mesa expira ao fim de 35 minutos de inactividade.**
+    A tabela `visits` ganhou a coluna `last_seen_at` (migração
+    `database/migrations/002_add_visit_last_seen_at.sql`). `app.js` envia
+    um "heartbeat" a cada minuto (`POST /visits/heartbeat`) enquanto a aba
+    estiver visível, actualizando esse campo. `require_valid_table_session()`
+    recusa checkout/pedido se já passaram mais de 35 minutos desde o último
+    heartbeat — o cliente tem de indicar o código da mesa outra vez, como se
+    tivesse desocupado a mesa. Isto é reforçado no servidor (não é só uma
+    verificação no browser que dá para contornar).
+16. **Bug dos ingredientes no modal do prato, resolvido.** A rota pública
+    `GET /menu` nunca incluía os ingredientes de cada prato na resposta —
+    `app.js` e `modal.js` já estavam prontos para os mostrar
+    (`item.ingredients`), mas a API simplesmente não os enviava, por isso
+    apareciam sempre como "Ingredientes não especificados." Agora
+    `GET /menu` traz os ingredientes de cada prato (tabela `ingredients`,
+    coluna `item_id`) numa única query.
 
 ## Segurança: o que ainda falta (recomendado, não aplicado ainda)
 
-- CSRF token nos formulários POST do `admin.php` (logout, marcar notificação
-  como lida, apagar notificação, etc.) — hoje dependem só do cookie de sessão.
-- Rate limiting no login.
-- Remover o fallback de senha em texto simples (login "legado") se não tiver
-  nenhuma conta nessas condições.
+- O bloqueio de login é por conta (`admin_users.id`), não por IP — alguém
+  pode tentar em várias contas diferentes sem ser travado. Uma camada extra
+  (fail2ban, rate limit no Nginx/Apache, ou um bloqueio por IP também) reforça
+  isto.
+- Cabeçalhos de segurança HTTP (CSP, `X-Frame-Options`, `X-Content-Type-Options`)
+  ainda não estão configurados — normalmente ficam no vhost do Apache/Nginx.
+- Sem HTTPS forçado (`Strict-Transport-Security` / redirect http→https) —
+  depende da configuração do servidor onde isto for publicado.
