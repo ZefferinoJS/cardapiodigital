@@ -485,7 +485,8 @@ ALTER TABLE `restaurants`
 --
 ALTER TABLE `restaurant_tables`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `restaurant_id` (`restaurant_id`);
+  ADD KEY `restaurant_id` (`restaurant_id`),
+  ADD UNIQUE KEY `uq_restaurant_table_number` (`restaurant_id`, `number`);
 
 --
 -- Indexes for table `visits`

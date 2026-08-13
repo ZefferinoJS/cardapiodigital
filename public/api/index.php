@@ -13,7 +13,7 @@ try{
     $pdo = new PDO($config['dsn'], $config['user'], $config['pass'], $config['options']);
 }catch(PDOException $e){
     http_response_code(500);
-    echo json_encode(['error'=>'DB connection failed','details'=>$e->getMessage()]);
+    echo json_encode(['error'=>'DB connection failed','details'=>friendly_error($e)]);
     exit;
 }
 
@@ -33,6 +33,30 @@ $resource = $parts[0] ?? '';
 
 // helper
 function json($data,$code=200){ http_response_code($code); echo json_encode($data); exit; }
+
+/**
+ * Traduz erros comuns do MySQL/PDO (chave duplicada, FK em falta, etc.)
+ * para uma mensagem legível. Sem isto, um "Duplicate entry '5' for key
+ * ...'restaurant_tables.uq_restaurant_table_number'" aparecia tal e qual
+ * num alert() do painel — confuso para quem não é programador.
+ */
+function friendly_error(Throwable $e): string
+{
+    $msg = $e->getMessage();
+    if (str_contains($msg, 'Duplicate entry')) {
+        if (str_contains($msg, 'table_number') || str_contains($msg, 'uq_restaurant_table')) {
+            return 'Já existe uma mesa com esse número/nome.';
+        }
+        if (str_contains($msg, 'slug')) {
+            return 'Já existe um registo com este slug/identificador.';
+        }
+        return 'Já existe um registo com esses dados.';
+    }
+    if (str_contains($msg, 'a foreign key constraint fails')) {
+        return 'Não é possível concluir: este registo está associado a outros dados (ex: pedidos, itens).';
+    }
+    return 'Ocorreu um erro ao processar o pedido.';
+}
 
 // Minutos de inactividade após os quais a sessão de mesa (visit) expira e o
 // cliente tem de voltar a indicar o código/QR da mesa. Aplica-se tanto no
@@ -236,7 +260,7 @@ if($method === 'POST' && $resource === 'orders'){
         $upd = $pdo->prepare('UPDATE orders SET total = ? WHERE id = ?'); $upd->execute([$total, $orderId]);
         $pdo->commit();
         json(['order_id'=>$orderId,'total'=>$total],201);
-    }catch(Exception $e){ $pdo->rollBack(); json(['error'=>'order_failed','details'=>$e->getMessage()],500); }
+    }catch(Exception $e){ $pdo->rollBack(); json(['error'=>'order_failed','details'=>friendly_error($e)],500); }
 }
 
 // POST /ratings { item_id, rating, comment }
@@ -260,7 +284,7 @@ if($method === 'POST' && $resource === 'ratings'){
         $up = $pdo->prepare('REPLACE INTO item_rating_aggregates (item_id, avg_rating, total_count, counts) VALUES (?,?,?,?)');
         $up->execute([$item_id, $avg, $total, json_encode($counts, JSON_UNESCAPED_UNICODE)]);
         json(['status'=>'ok','avg'=>$avg,'total'=>$total,'counts'=>$counts]);
-    }catch(Exception $e){ json(['error'=>'rating_failed','details'=>$e->getMessage()],500); }
+    }catch(Exception $e){ json(['error'=>'rating_failed','details'=>friendly_error($e)],500); }
 }
 
 // ========== ADMIN ENDPOINTS ==========
@@ -399,7 +423,7 @@ if($method === 'GET' && $resource === 'admin' && ($parts[1] ?? '') === 'metrics'
             'date' => $date
         ]);
     }catch(Exception $e){
-        json(['error'=>'metrics_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'metrics_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -446,7 +470,7 @@ if($method === 'POST' && $resource === 'admin' && ($parts[1] ?? '') === 'items')
 
         json(['id'=>$itemId, 'message'=>'Item created successfully'], 201);
     }catch(Exception $e){
-        json(['error'=>'create_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'create_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -499,7 +523,7 @@ if($method === 'PUT' && $resource === 'admin' && ($parts[1] ?? '') === 'items' &
 
         json(['message'=>'Item updated successfully']);
     }catch(Exception $e){
-        json(['error'=>'update_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'update_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -532,7 +556,7 @@ if($method === 'DELETE' && $resource === 'admin' && ($parts[1] ?? '') === 'items
         $pdo->prepare('DELETE FROM menu_items WHERE id = ?')->execute([$itemId]);
         json(['message'=>'Item deleted successfully']);
     }catch(Exception $e){
-        json(['error'=>'delete_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'delete_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -591,7 +615,7 @@ if($method === 'POST' && $resource === 'admin' && ($parts[1] ?? '') === 'categor
         $stmt->execute([$restaurant_id, $name, $slug, $position, $active]);
         json(['id'=>$pdo->lastInsertId(), 'message'=>'Category created successfully'], 201);
     }catch(Exception $e){
-        json(['error'=>'create_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'create_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -614,7 +638,7 @@ if($method === 'PUT' && $resource === 'admin' && ($parts[1] ?? '') === 'categori
         if ($stmt->rowCount() === 0) return json(['error'=>'Categoria não encontrada'],404);
         json(['message'=>'Category updated successfully']);
     }catch(Exception $e){
-        json(['error'=>'update_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'update_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -627,7 +651,7 @@ if($method === 'DELETE' && $resource === 'admin' && ($parts[1] ?? '') === 'categ
         if ($stmt->rowCount() === 0) return json(['error'=>'Categoria não encontrada'],404);
         json(['message'=>'Category deleted successfully']);
     }catch(Exception $e){
-        json(['error'=>'delete_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'delete_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -669,7 +693,7 @@ if($method === 'POST' && $resource === 'admin' && ($parts[1] ?? '') === 'tables'
         
         json(['id'=>$tableId, 'qr_code'=>$qr_code, 'message'=>'Table created successfully'],201);
     }catch(Exception $e){
-        json(['error'=>'create_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'create_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -695,7 +719,7 @@ if($method === 'PUT' && $resource === 'admin' && ($parts[1] ?? '') === 'tables' 
         
         json(['message'=>'Table updated successfully']);
     }catch(Exception $e){
-        json(['error'=>'update_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'update_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -708,7 +732,7 @@ if($method === 'DELETE' && $resource === 'admin' && ($parts[1] ?? '') === 'table
         if ($stmt->rowCount() === 0) return json(['error'=>'Mesa não encontrada'],404);
         json(['message'=>'Table deleted successfully']);
     }catch(Exception $e){
-        json(['error'=>'delete_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'delete_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -802,7 +826,7 @@ if($method === 'PUT' && $resource === 'admin' && ($parts[1] ?? '') === 'orders' 
         if ($stmt->rowCount() === 0) return json(['error'=>'Pedido não encontrado'],404);
         json(['message'=>'Order status updated','status'=>$status]);
     }catch(Exception $e){
-        json(['error'=>'update_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'update_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -906,7 +930,7 @@ if($method === 'DELETE' && $resource === 'admin' && ($parts[1] ?? '') === 'ratin
 
         json(['message'=>'Rating deleted successfully']);
     }catch(Exception $e){
-        json(['error'=>'delete_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'delete_failed','details'=>friendly_error($e)],500);
     }
 }
 
@@ -984,7 +1008,7 @@ if($method === 'POST' && $resource === 'checkout'){
         json(['success'=>true, 'order_id'=>$orderId, 'total'=>$total, 'message'=>'Pedido criado com sucesso!'],201);
     } catch(Exception $e) {
         $pdo->rollBack();
-        json(['error'=>'checkout_failed','details'=>$e->getMessage()],500);
+        json(['error'=>'checkout_failed','details'=>friendly_error($e)],500);
     }
 }
 

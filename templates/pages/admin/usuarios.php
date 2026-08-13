@@ -15,6 +15,22 @@
     </div>
 </header>
 
+<?php if (!empty($flashSuccess)): ?>
+<div class="alert alert-success" style="margin:16px 0 0;padding:12px 18px;background:#D1FAE5;
+     color:#065F46;border-radius:8px;display:flex;align-items:center;gap:10px;">
+    <i class="fas fa-check-circle"></i>
+    <?= $escape($flashSuccess); ?>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($flashError)): ?>
+<div class="alert alert-error" style="margin:16px 0 0;padding:12px 18px;background:#FEE2E2;
+     color:#991B1B;border-radius:8px;display:flex;align-items:center;gap:10px;">
+    <i class="fas fa-exclamation-triangle"></i>
+    <?= $escape($flashError); ?>
+</div>
+<?php endif; ?>
+
 <!-- ── Filtros ── -->
 <section class="admin-filters">
     <form method="GET" style="display:contents;">

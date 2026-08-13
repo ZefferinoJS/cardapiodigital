@@ -131,8 +131,13 @@
     const data = await toJson(res, res.url || primaryUrl);
  
     if (!res.ok) {
-      const msg = data?.details || data?.error || `Erro HTTP ${res.status}`;
-      throw new Error(`[API ${res.status}] ${msg}`);
+      // Mensagem limpa para mostrar ao utilizador (sem "[API 404]" nem jargão
+      // técnico — isso ficava confuso/"deformado" nos alert()s do painel).
+      const msg = data?.details || data?.message || data?.error || `Erro do servidor (HTTP ${res.status})`;
+      const err = new Error(msg);
+      err.status = res.status;
+      err.data = data;
+      throw err;
     }
  
     return data;

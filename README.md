@@ -54,7 +54,7 @@ nenhum `require` ou URL.
 1. Importe `database/cardapio.sql` na sua base de dados MySQL/MariaDB.
    Se já tinha uma base de dados criada a partir de uma versão anterior deste
    projeto, corra também as migrações em `database/migrations/`, por ordem
-   (`001_...`, depois `002_...`).
+   (`001_...`, `002_...`, `003_...`).
 2. Copie `.env.example` para `.env` (ou defina as variáveis `DB_HOST`,
    `DB_NAME`, `DB_USER`, `DB_PASS` diretamente no seu servidor web/painel de
    hospedagem) e preencha com as credenciais reais.
@@ -172,6 +172,60 @@ nenhum `require` ou URL.
     apareciam sempre como "Ingredientes não especificados." Agora
     `GET /menu` traz os ingredientes de cada prato (tabela `ingredients`,
     coluna `item_id`) numa única query.
+
+## Ronda de correções: "difícil editar/criar" e "erros deformados"
+
+Investiguei a fundo porque editar/criar utilizador, mesa, prato, categoria
+estava inconsistente, com erros ilegíveis. Encontrei quatro causas reais,
+não apenas uma:
+
+17. **[CAUSA PRINCIPAL] `rowCount()` a mentir depois de UPDATE.** Em MySQL,
+    `PDOStatement::rowCount()` depois de um `UPDATE` só conta linhas cujo
+    valor **realmente mudou** — não linhas encontradas pelo `WHERE`. O
+    código usa `rowCount() === 0` para decidir "registo não encontrado" ao
+    editar pratos, categorias, mesas e pedidos. Resultado: guardar um
+    registo **sem alterar nenhum valor** (ex: abrir para editar e clicar
+    Guardar sem mudar nada) fazia a API responder incorretamente "Prato não
+    encontrado" / "Mesa não encontrada" / "Categoria não encontrada" — um
+    registo que estava mesmo ali, à vista. Isto explica o comportamento
+    "às vezes funciona, às vezes não" ao editar.
+    **Correção:** adicionei `PDO::MYSQL_ATTR_FOUND_ROWS => true` a
+    `config/db.php`. Com isto, `rowCount()` passa a reportar linhas
+    encontradas (como o resto do código já assumia), em toda a aplicação,
+    sem precisar de tocar em cada rota uma a uma.
+18. **Erros mostrados ao utilizador com formatação técnica.** `main.js`
+    lançava erros como `"[API 404] Mesa não encontrada"` — o prefixo
+    `[API 404]` não ajuda quem não é programador e parece texto
+    "deformado" num `alert()`. Agora a mensagem mostrada é só o texto
+    limpo (`"Mesa não encontrada"`), com o código HTTP disponível à parte
+    (`err.status`) para quem for depurar no consola.
+19. **Erros ao criar/editar utilizador e mesa (via `admin.php`) falhavam
+    em total silêncio.** `criar_usuario`, `editar_usuario`,
+    `apagar_usuario`, `criar_mesa`, `editar_mesa`, `apagar_mesa` fazem
+    `header('Location...'); exit;` logo a seguir à acção — mesmo quando
+    falha. Qualquer erro (ex: e-mail já em uso, que tem restrição
+    `UNIQUE` na BD) só ia parar ao `logs/php_errors.log`; o utilizador via
+    a página recarregar sem nenhuma indicação do que correu mal.
+    **Correção:** criei `flash_error()`/`flash_success()` (mensagens
+    guardadas na sessão, que sobrevivem ao redirect — o mesmo princípio já
+    usado no erro de login) e apliquei-as aos seis handlers, com mensagens
+    específicas (nome/e-mail em falta, e-mail duplicado, senha curta,
+    mesa duplicada, registo não encontrado). O banner de sucesso/erro
+    aparece agora no topo de `usuarios.php` (que não tinha nenhum) e
+    continua a aparecer em `configuracoes.php`.
+20. **Número de mesa duplicado não era travado de forma consistente.** A
+    API (`/admin/tables`) já verificava duplicados antes de gravar, mas o
+    formulário de mesas em `configuracoes.php` não — só falhava (ou pior,
+    deixava duplicar) se a query desse erro. Acrescentei a mesma
+    verificação a `admin.php`, e um índice `UNIQUE(restaurant_id, number)`
+    em `restaurant_tables` (ver `database/migrations/003_unique_table_number.sql`
+    para bases de dados já existentes) como proteção final ao nível da BD,
+    independente de qual caminho (API ou formulário) for usado.
+
+Também troquei, em toda a API, as mensagens de erro em bruto do MySQL/PDO
+(`Duplicate entry '5' for key 'restaurant_tables.uq_...'`) por texto
+legível (`friendly_error()`), para o mesmo tipo de mensagem "deformada"
+não voltar a aparecer nos `alert()` do painel por outra via.
 
 ## Segurança: o que ainda falta (recomendado, não aplicado ainda)
 

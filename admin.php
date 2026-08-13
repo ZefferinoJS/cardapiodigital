@@ -46,6 +46,41 @@ function redirecionarPara(string $routa): never
 }
 
 /**
+ * Mensagens "flash": guardadas na sessão, sobrevivem a um redirect (ao
+ * contrário de uma variável PHP local) e são apagadas assim que lidas.
+ * Usadas pelos handlers que fazem header('Location...') logo a seguir à
+ * ação (criar/editar/apagar utilizador, mesa, etc.) — sem isto, qualquer
+ * erro nessas acções (ex: e-mail duplicado) falhava em silêncio, sem
+ * nenhuma indicação ao utilizador do que correu mal.
+ */
+function flash_error(string $message): void
+{
+    $_SESSION['flash_error'] = $message;
+}
+
+function flash_success(string $message): void
+{
+    $_SESSION['flash_success'] = $message;
+}
+
+/**
+ * Traduz erros comuns de BD (chave única duplicada, etc.) para uma
+ * mensagem que faz sentido para quem está a usar o painel, em vez do
+ * texto técnico do driver PDO/MySQL.
+ */
+function friendly_db_error(Throwable $e, string $fallback): string
+{
+    $msg = $e->getMessage();
+    if (str_contains($msg, 'Duplicate entry') && str_contains($msg, 'email')) {
+        return 'Já existe um utilizador com este e-mail.';
+    }
+    if (str_contains($msg, 'Duplicate entry')) {
+        return 'Já existe um registo com esses dados.';
+    }
+    return $fallback;
+}
+
+/**
  * Garante compatibilidade caso fetch_one não esteja definida em dbnojs.php.
  */
 if (!function_exists('fetch_one')) {
@@ -116,6 +151,12 @@ $csrfToken = csrf_token();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     csrf_check();
 }
+
+// Mensagens flash de uma acção anterior (ex: redirect depois de criar/editar
+// mesa ou utilizador). Lidas uma única vez e já removidas da sessão.
+$flashError   = (string) ($_SESSION['flash_error']   ?? '');
+$flashSuccess = (string) ($_SESSION['flash_success'] ?? '');
+unset($_SESSION['flash_error'], $_SESSION['flash_success']);
 
 // ── Acções POST ───────────────────────────────────────────────────────────────
 if (($_POST['action'] ?? null) === 'logout') {
@@ -596,7 +637,13 @@ if ($routa === 'usuarios') {
         $password = $_POST['password']      ?? '';
         // 'superadmin' não é atribuível por esta UI — só pode ser definido diretamente na BD,
         // para evitar que qualquer manager crie contas com privilégios máximos.
-        if ($name && $email && $password && in_array($role, ['manager', 'staff', 'kitchen'], true)) {
+        if (!$name || !$email) {
+            flash_error('Nome e e-mail são obrigatórios.');
+        } elseif (!$password || strlen($password) < 8) {
+            flash_error('A senha é obrigatória e deve ter no mínimo 8 caracteres.');
+        } elseif (!in_array($role, ['manager', 'staff', 'kitchen'], true)) {
+            flash_error('Função inválida.');
+        } else {
             try {
                 $hash = password_hash($password, PASSWORD_BCRYPT);
                 $stmt = $pdo->prepare("
@@ -611,8 +658,10 @@ if ($routa === 'usuarios') {
                     ':role'  => $role,
                 ]);
                 log_error("[usuarios] criado user_id=" . $pdo->lastInsertId() . " email={$email}");
+                flash_success('Utilizador criado com sucesso.');
             } catch (Throwable $e) {
                 log_error("[usuarios] ERRO criar: " . $e->getMessage());
+                flash_error(friendly_db_error($e, 'Não foi possível criar o utilizador.'));
             }
         }
         header('Location: /admin.php?routa=usuarios'); exit;
@@ -624,7 +673,13 @@ if ($routa === 'usuarios') {
         $email    = trim($_POST['email']       ?? '');
         $role     = $_POST['role']             ?? 'staff';
         $password = $_POST['password']         ?? '';
-        if ($uid && $name && $email && in_array($role, ['manager', 'staff', 'kitchen'], true)) {
+        if (!$uid || !$name || !$email) {
+            flash_error('Nome e e-mail são obrigatórios.');
+        } elseif (!in_array($role, ['manager', 'staff', 'kitchen'], true)) {
+            flash_error('Função inválida.');
+        } elseif ($password !== '' && strlen($password) < 8) {
+            flash_error('A nova senha deve ter no mínimo 8 caracteres (ou deixe em branco para manter a actual).');
+        } else {
             try {
                 if ($password !== '') {
                     $hash = password_hash($password, PASSWORD_BCRYPT);
@@ -642,9 +697,23 @@ if ($routa === 'usuarios') {
                     $stmt->execute([':name'=>$name,':email'=>$email,':role'=>$role,
                                     ':id'=>$uid,':rid'=>RESTAURANT_ID]);
                 }
+                // Com PDO::MYSQL_ATTR_FOUND_ROWS (config/db.php), rowCount()
+                // reflecte linhas encontradas, não só linhas alteradas — não
+                // dá falso "não encontrado" quando se guarda sem mudar nada.
+                if ($stmt->rowCount() === 0) {
+                    // Confirma se o utilizador existe mesmo, para distinguir
+                    // "não mudou nada" (ok) de "não encontrado" (erro real).
+                    $exists = fetch_one($pdo, 'SELECT id FROM admin_users WHERE id=:id AND restaurant_id=:rid', [':id'=>$uid, ':rid'=>RESTAURANT_ID]);
+                    if (!$exists) {
+                        flash_error('Utilizador não encontrado.');
+                        header('Location: /admin.php?routa=usuarios'); exit;
+                    }
+                }
                 log_error("[usuarios] editado user_id={$uid}");
+                flash_success('Utilizador actualizado com sucesso.');
             } catch (Throwable $e) {
                 log_error("[usuarios] ERRO editar: " . $e->getMessage());
+                flash_error(friendly_db_error($e, 'Não foi possível actualizar o utilizador.'));
             }
         }
         header('Location: /admin.php?routa=usuarios'); exit;
@@ -652,15 +721,25 @@ if ($routa === 'usuarios') {
  
     if ($post_action === 'apagar_usuario') {
         $uid = (int)($_POST['usuario_id'] ?? 0);
-        if ($uid && $uid !== (int)$auth['id']) {
+        if (!$uid) {
+            flash_error('Utilizador inválido.');
+        } elseif ($uid === (int)$auth['id']) {
+            flash_error('Não pode remover a sua própria conta.');
+        } else {
             try {
                 $stmt = $pdo->prepare("
                     DELETE FROM admin_users WHERE id=:id AND restaurant_id=:rid
                 ");
                 $stmt->execute([':id'=>$uid, ':rid'=>RESTAURANT_ID]);
-                log_error("[usuarios] apagado user_id={$uid}");
+                if ($stmt->rowCount() === 0) {
+                    flash_error('Utilizador não encontrado.');
+                } else {
+                    log_error("[usuarios] apagado user_id={$uid}");
+                    flash_success('Utilizador removido com sucesso.');
+                }
             } catch (Throwable $e) {
                 log_error("[usuarios] ERRO apagar: " . $e->getMessage());
+                flash_error('Não foi possível remover o utilizador.');
             }
         }
         header('Location: /admin.php?routa=usuarios'); exit;
@@ -859,8 +938,8 @@ if ($routa === 'notificacoes') {
 // ── Dados de Configurações ────────────────────────────────────────────────────
 if ($routa === 'configuracoes') {
  
-    $config_sucesso = '';
-    $config_erro    = '';
+    $config_sucesso = $flashSuccess;
+    $config_erro    = $flashError;
     $post_action    = $_POST['action'] ?? '';
  
     // ── Acções POST ───────────────────────────────────────────────────────────
@@ -927,45 +1006,80 @@ if ($routa === 'configuracoes') {
         $number = trim($_POST['number']      ?? '');
         $desc   = trim($_POST['description'] ?? '');
         $active = isset($_POST['active']) ? 1 : 0;
-        if ($number) {
-            try {
-                if ($post_action === 'criar_mesa') {
-                    $qr   = 'QR-' . strtoupper(bin2hex(random_bytes(8)));
-                    $stmt = $pdo->prepare("
-                        INSERT INTO restaurant_tables (restaurant_id, number, description, qr_code, active)
-                        VALUES (:rid, :num, :desc, :qr, :active)
-                    ");
-                    $stmt->execute([':rid'=>RESTAURANT_ID,':num'=>$number,':desc'=>$desc,
-                                    ':qr'=>$qr,':active'=>$active]);
-                    log_error("[config] mesa criada number={$number}");
-                } else {
-                    $stmt = $pdo->prepare("
-                        UPDATE restaurant_tables
-                        SET number=:num, description=:desc, active=:active
-                        WHERE id=:id AND restaurant_id=:rid
-                    ");
-                    $stmt->execute([':num'=>$number,':desc'=>$desc,':active'=>$active,
-                                    ':id'=>$mid,':rid'=>RESTAURANT_ID]);
-                    log_error("[config] mesa editada id={$mid}");
-                }
-            } catch (Throwable $e) {
-                log_error("[config] ERRO mesa: " . $e->getMessage());
+
+        if (!$number) {
+            flash_error('O número/nome da mesa é obrigatório.');
+            header('Location: /admin.php?routa=configuracoes'); exit;
+        }
+
+        try {
+            // Mesmo número de mesa já existe neste restaurante? (mesma regra
+            // aplicada em public/api/index.php para quem gere mesas por lá)
+            $dupSql = 'SELECT id FROM restaurant_tables WHERE restaurant_id = :rid AND number = :num';
+            $dupParams = [':rid' => RESTAURANT_ID, ':num' => $number];
+            if ($post_action === 'editar_mesa') {
+                $dupSql .= ' AND id != :id';
+                $dupParams[':id'] = $mid;
             }
+            $dup = fetch_one($pdo, $dupSql, $dupParams);
+            if ($dup) {
+                flash_error('Já existe uma mesa com esse número/nome.');
+                header('Location: /admin.php?routa=configuracoes'); exit;
+            }
+
+            if ($post_action === 'criar_mesa') {
+                $qr   = 'QR-' . strtoupper(bin2hex(random_bytes(8)));
+                $stmt = $pdo->prepare("
+                    INSERT INTO restaurant_tables (restaurant_id, number, description, qr_code, active)
+                    VALUES (:rid, :num, :desc, :qr, :active)
+                ");
+                $stmt->execute([':rid'=>RESTAURANT_ID,':num'=>$number,':desc'=>$desc,
+                                ':qr'=>$qr,':active'=>$active]);
+                log_error("[config] mesa criada number={$number}");
+                flash_success('Mesa criada com sucesso.');
+            } else {
+                $stmt = $pdo->prepare("
+                    UPDATE restaurant_tables
+                    SET number=:num, description=:desc, active=:active
+                    WHERE id=:id AND restaurant_id=:rid
+                ");
+                $stmt->execute([':num'=>$number,':desc'=>$desc,':active'=>$active,
+                                ':id'=>$mid,':rid'=>RESTAURANT_ID]);
+                // Com PDO::MYSQL_ATTR_FOUND_ROWS, rowCount()===0 aqui já
+                // significa mesmo "não encontrada", não "nada mudou".
+                if ($stmt->rowCount() === 0) {
+                    flash_error('Mesa não encontrada.');
+                    header('Location: /admin.php?routa=configuracoes'); exit;
+                }
+                log_error("[config] mesa editada id={$mid}");
+                flash_success('Mesa actualizada com sucesso.');
+            }
+        } catch (Throwable $e) {
+            log_error("[config] ERRO mesa: " . $e->getMessage());
+            flash_error(friendly_db_error($e, 'Não foi possível guardar a mesa.'));
         }
         header('Location: /admin.php?routa=configuracoes'); exit;
     }
  
     if ($post_action === 'apagar_mesa') {
         $mid = (int)($_POST['mesa_id'] ?? 0);
-        if ($mid) {
+        if (!$mid) {
+            flash_error('Mesa inválida.');
+        } else {
             try {
                 $stmt = $pdo->prepare("
                     DELETE FROM restaurant_tables WHERE id=:id AND restaurant_id=:rid
                 ");
                 $stmt->execute([':id'=>$mid, ':rid'=>RESTAURANT_ID]);
-                log_error("[config] mesa apagada id={$mid}");
+                if ($stmt->rowCount() === 0) {
+                    flash_error('Mesa não encontrada.');
+                } else {
+                    log_error("[config] mesa apagada id={$mid}");
+                    flash_success('Mesa removida com sucesso.');
+                }
             } catch (Throwable $e) {
                 log_error("[config] ERRO apagar_mesa: " . $e->getMessage());
+                flash_error('Não foi possível remover a mesa. Verifique se não tem pedidos associados.');
             }
         }
         header('Location: /admin.php?routa=configuracoes'); exit;
